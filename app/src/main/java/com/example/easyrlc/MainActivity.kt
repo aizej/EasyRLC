@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -64,6 +65,7 @@ import kotlin.math.pow
 
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.core.text.isDigitsOnly
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberBottom
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberStart
@@ -75,7 +77,6 @@ import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModel
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
 
 import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
-import kotlin.math.abs
 import kotlin.math.min
 import kotlin.math.max
 import kotlin.math.sign
@@ -111,13 +112,13 @@ class MainActivity : ComponentActivity() {
 
     val point_size = 40
     val round_to_decilal_places = 4
-    val graph_lenght = 25
-    val graph_autorange_maxdif =  50 //
-    val graph_absolute_start_at = 0.1
-    val graph_absolute_end_at  = 100000000.0
+    val graph_lenght = 50
+    val graph_absolute_start_at = 0.01
+    val graph_absolute_end_at  = 1000000000.0
     val RLC_graph_from_to = 80.0
     val RL_RC_graph_from = 10.0
-    val RL_RC_graph_to = 90.0
+    val RL_RC_graph_to = 80.0
+    val precision_steps = 50
 
 
 
@@ -157,7 +158,7 @@ class MainActivity : ComponentActivity() {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(120.dp)
+                                    .height(140.dp)
                                     .background(Purple500),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.Center
@@ -165,6 +166,7 @@ class MainActivity : ComponentActivity() {
                                 // Resistor section
                                 Column(
                                     modifier = Modifier
+                                        .fillMaxHeight()
                                         .weight(1f)
                                         .background(Color.White)
                                         .padding(5.dp),
@@ -187,7 +189,7 @@ class MainActivity : ComponentActivity() {
 
                                     OutlinedTextField(
                                         value = R_spawn_text,
-                                        onValueChange = { R_spawn_text = it },
+                                        onValueChange = { if (it.replace(".","").isDigitsOnly()) R_spawn_text = it },
                                         label = { Text("Ω") }
                                     )
                                 }
@@ -195,6 +197,7 @@ class MainActivity : ComponentActivity() {
                                 // Inductor section
                                 Column(
                                     modifier = Modifier
+                                        .fillMaxHeight()
                                         .weight(1f)
                                         .background(Color.White)
                                         .padding(5.dp),
@@ -217,7 +220,7 @@ class MainActivity : ComponentActivity() {
 
                                     OutlinedTextField(
                                         value = L_spawn_text,
-                                        onValueChange = { L_spawn_text = it },
+                                        onValueChange = { if (it.replace(".","").isDigitsOnly()) L_spawn_text = it },
                                         label = { Text("H") }
                                     )
                                 }
@@ -225,6 +228,7 @@ class MainActivity : ComponentActivity() {
                                 // Capacitor section
                                 Column(
                                     modifier = Modifier
+                                        .fillMaxHeight()
                                         .weight(1f)
                                         .background(Color.White)
                                         .padding(5.dp),
@@ -247,7 +251,7 @@ class MainActivity : ComponentActivity() {
 
                                     OutlinedTextField(
                                         value = C_spawn_text,
-                                        onValueChange = { C_spawn_text = it },
+                                        onValueChange = { if (it.replace(".","").isDigitsOnly()) C_spawn_text = it },
                                         label = { Text("F") }
                                     )
                                 }
@@ -263,6 +267,21 @@ class MainActivity : ComponentActivity() {
                                     Button(onClick = {add_wire_to_components(components)}) {
                                         Text("WIRE")
                                     }
+                                    /*
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .clip(RoundedCornerShape(16.dp))
+                                            .background(Color.LightGray),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = "\uD83D\uDDD1",
+                                            fontSize = 60.sp // Adjust this value as needed
+                                        )
+                                    }
+
+                                     */
                                 }
                             }
                         }
@@ -302,7 +321,7 @@ class MainActivity : ComponentActivity() {
                                             val is_zero_in_range = sign(phase_graph_data.value[0].y) == -1*sign(phase_graph_data.value[graph_lenght-1].y)
                                             if (is_zero_in_range)
                                             {
-                                                var result = find_phase(total_equation.value,graph_from.value,graph_to.value, 30, 0.0)
+                                                var result = find_phase(total_equation.value,graph_from.value,graph_to.value, precision_steps, 0.0)
                                                 fr.value = result.first
                                                 fr_precision_error.value = result.second
 
@@ -310,12 +329,12 @@ class MainActivity : ComponentActivity() {
                                                 abs_at_fr.value = amp_phase_from_complex(calculate_value(total_equation.value,fr.value)).first
 
 
-                                                result = find_phase(total_equation.value,graph_from.value,graph_to.value, 30, 45.0)
+                                                result = find_phase(total_equation.value,graph_from.value,graph_to.value, precision_steps, 45.0)
                                                 val plus_45_phase = result.first
                                                 val plus_45_phase_error = result.second
 
 
-                                                result = find_phase(total_equation.value,graph_from.value,graph_to.value, 30, -45.0)
+                                                result = find_phase(total_equation.value,graph_from.value,graph_to.value, precision_steps, -45.0)
                                                 val minus_45_phase = result.first
                                                 val minus_45_phase_error = result.second
 
@@ -361,8 +380,8 @@ class MainActivity : ComponentActivity() {
                                                 var data = getvalues_for_initial_graph(total_equation.value, graph_from.value,graph_to.value)
                                                 abs_graph_data.value = data.first
                                                 phase_graph_data.value = data.second
-
-                                                if (phase_graph_data.value[0].y != 90.toFloat() && phase_graph_data.value[0].y != (-90).toFloat())  // cant estimate graph for just L C
+                                                Log.d("zzz","${phase_graph_data.value[0].y != phase_graph_data.value[graph_lenght-1].y}")
+                                                if (phase_graph_data.value[0].y != phase_graph_data.value[graph_lenght-1].y)  // cant estimate graph for just L C
                                                 {
                                                     val newrange = get_range_automaticaly(phase_graph_data.value,total_equation.value)
                                                     if (newrange.first != (-1).toFloat())
@@ -448,20 +467,20 @@ class MainActivity : ComponentActivity() {
                                         OutlinedTextField(modifier = Modifier
                                             .weight(2f),
                                             value = frequency_from.value,
-                                            onValueChange = { frequency_from.value = it },
+                                            onValueChange = { if (it.replace(".","").isDigitsOnly()) frequency_from.value = it },
                                             label = { Text("from") }
                                         )
                                         OutlinedTextField(modifier = Modifier
                                             .weight(1.5f),
                                             value = frequency_to.value,
-                                            onValueChange = { frequency_to.value = it },
+                                            onValueChange = { if (it.replace(".","").isDigitsOnly()) frequency_to.value = it },
                                             label = { Text("to") }
                                         )
 
                                         OutlinedTextField(modifier = Modifier
                                             .weight(2.3f),
                                             value = frequency_textfield_text,
-                                            onValueChange = { frequency_textfield_text = it },
+                                            onValueChange = { if (it.replace(".","").isDigitsOnly()) frequency_textfield_text = it },
                                             label = { Text("exact") }
                                         )
 
@@ -584,46 +603,10 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    fun get_range(points: List<Point>): Pair<Float, Float>
-    {
-
-        for (i in 0 until points.size - 1) {
-            val current = points[i].y
-            val next = points[i + 1].y
-            if(abs(next - current)>graph_autorange_maxdif.toFloat())
-            {
-                val x_dif = points[i + 1].x - points[i].x
-                return Pair( points[i].x,points[i + 1].x + x_dif*2)
-            }
-        }
-        return Pair((-1).toFloat(), (-1).toFloat())
-    }
-
-    fun get_range_auto_old(points: List<Point>,equation: String): Pair<Float, Float>
-    {
-        var newpoints = points
-        var result = get_range(newpoints)
-
-        var gut_result = result
-
-        while (result.first != (-1).toFloat())
-        {
-
-            val data = getvalues_for_initial_graph(equation, result.first.toDouble() ,result.second.toDouble())
-            newpoints = data.second
-            result = get_range(newpoints)
-            if (result.first != (-1).toFloat())
-            {
-                gut_result = result
-            }
-        }
-        Log.d("r","$gut_result")
-        return gut_result
-    }
-
     fun get_range_automaticaly(points: List<Point>,equation: String): Pair<Float, Float> {
 
         val is_zero_in_range = sign(points[0].y) == -1*sign(points[graph_lenght-1].y)
+        Log.d("autorange","$is_zero_in_range")
         if (is_zero_in_range)
         {
             val minus_60_freq = find_phase(equation,points[0].x.toDouble(), points[graph_lenght-1].x.toDouble(), 40 , -RLC_graph_from_to).first
@@ -921,6 +904,13 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+            if (key != "M" && key != "P")
+            {
+                if (components[key]?.frontPosition?.value!!.x < 0 || components[key]?.backPosition?.value!!.x < 0) // komponent je castecne mimo obrazovku
+                {
+                    deletecomponent(components,key)
+                }
+            }
         }
         //Log.d("components","$components")
     }
@@ -948,7 +938,7 @@ class MainActivity : ComponentActivity() {
 
     fun simplyfy_step(solved_components: MutableMap<String, Component>): Boolean
     {
-        Log.d("components","${solved_components}")
+        //Log.d("components","${solved_components}")
         if(simplyfy_paraler(solved_components))
         {
             return true
@@ -1174,8 +1164,8 @@ class MainActivity : ComponentActivity() {
 
                 center = (to - from) / 2 + from
                 centervalue = phasefromcomplex(calculate_value(equation, center))
-                Log.d("center","${center}")
-                Log.d("center","${centervalue}")
+                //Log.d("center","${center}")
+                //Log.d("center","${centervalue}")
             }
         }
         else
@@ -1189,8 +1179,8 @@ class MainActivity : ComponentActivity() {
 
                 center = (to - from) / 2 + from
                 centervalue = phasefromcomplex(calculate_value(equation, center))
-                Log.d("center","${center}")
-                Log.d("center","${centervalue}")
+                //Log.d("center","${center}")
+                //Log.d("center","${centervalue}")
             }
         }
 
