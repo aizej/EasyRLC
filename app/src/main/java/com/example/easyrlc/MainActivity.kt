@@ -59,10 +59,6 @@ import kotlin.math.sqrt
 import com.tecacet.komplex.Complex
 import kotlin.math.atan
 
-
-import kotlin.math.pow
-
-
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.core.text.isDigitsOnly
@@ -79,6 +75,7 @@ import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
 import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
 import kotlin.math.min
 import kotlin.math.max
+import kotlin.math.pow
 import kotlin.math.sign
 
 
