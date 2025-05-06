@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
 import androidx.compose.material.MaterialTheme
@@ -84,6 +85,7 @@ class MainActivity : ComponentActivity() {
     var component_num_L = 1
     var component_num_C = 1
     var component_num_w = 1
+    var component_num_S = 1
 
     data class Point(val x: Float, val y: Float)
     data class Position(var x: Float, var y: Float)
@@ -301,6 +303,7 @@ class MainActivity : ComponentActivity() {
                             val fmh = remember { mutableStateOf(-1.0) }
                             val Q = remember { mutableStateOf(-1.0) }
                             val B = remember { mutableStateOf(-1.0) }
+                            val show_equation = remember { mutableStateOf(false) }
 
 
 
@@ -312,6 +315,11 @@ class MainActivity : ComponentActivity() {
                             ){
                                 if(current_window_shown.value == "graph")
                                 {
+                                    Button(onClick = {show_equation.value = !show_equation.value })
+                                    {
+                                        Text("EQUATION")
+                                    }
+
                                     Button(onClick =
                                         {
                                             //check if 0 is in phase graph range
@@ -377,7 +385,7 @@ class MainActivity : ComponentActivity() {
                                                 var data = getvalues_for_initial_graph(total_equation.value, graph_from.value,graph_to.value)
                                                 abs_graph_data.value = data.first
                                                 phase_graph_data.value = data.second
-                                                Log.d("zzz","${phase_graph_data.value[0].y != phase_graph_data.value[graph_lenght-1].y}")
+                                                //Log.d("autorange_posible","${phase_graph_data.value[0].y != phase_graph_data.value[graph_lenght-1].y}")
                                                 if (phase_graph_data.value[0].y != phase_graph_data.value[graph_lenght-1].y)  // cant estimate graph for just L C
                                                 {
                                                     val newrange = get_range_automaticaly(phase_graph_data.value,total_equation.value)
@@ -432,13 +440,18 @@ class MainActivity : ComponentActivity() {
                                         verticalArrangement = Arrangement.Top,
                                         horizontalAlignment = Alignment.Start
                                     ) {
-                                        Text("Equation: ${total_equation.value.replace("x","f")}")
-                                        Text("Resonation frequency (fr): ${fr.value} (+-${fr_precision_error.value})")
-                                        Text("Impedance on fr: ${abs_at_fr.value}")
-                                        Text("fmd: ${fmd.value}")
-                                        Text("fmh: ${fmh.value}")
-                                        Text("B: ${B.value}")
-                                        Text("Q: ${Q.value}")
+
+                                        if (show_equation.value)
+                                        {
+                                            SelectableText("Equation: ${total_equation.value.replace("x","f")}")
+                                        }
+                                        SelectableText("Resonation frequency (fr): ${fr.value} (+-${fr_precision_error.value})")
+                                        SelectableText("Impedance on fr: ${abs_at_fr.value}")
+                                        SelectableText("fmd: ${fmd.value}")
+                                        SelectableText("fmh: ${fmh.value}")
+                                        SelectableText("B: ${B.value}")
+                                        SelectableText("Q: ${Q.value}")
+
                                     }
                                 }
 
@@ -935,7 +948,7 @@ class MainActivity : ComponentActivity() {
 
     fun simplyfy_step(solved_components: MutableMap<String, Component>): Boolean
     {
-        //Log.d("components","${solved_components}")
+        Log.d("components","${solved_components}")
         if(simplyfy_paraler(solved_components))
         {
             return true
@@ -952,7 +965,7 @@ class MainActivity : ComponentActivity() {
     fun deletecomponent(solved_components: MutableMap<String, Component>,component_to_delete: String)
     {
         //Log.d("components","$solved_components")          //bugtesting
-        //Log.d("deleting_component",component_to_delete)
+        Log.d("deleting_component",component_to_delete)
         solved_components.remove(component_to_delete)
         solved_components.entries.forEach { (component, _) ->
             solved_components[component]!!.input.remove(component_to_delete)
@@ -972,6 +985,82 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+        return false
+    }
+
+
+    fun simplyfy_delta_star(solved_components: MutableMap<String, Component>): Boolean
+    {
+        for ((first, component) in solved_components) {
+            if (first != "P" && first != "M") {
+                for (second in component.input) {
+                    if (second != "P" && second != "M") {    // neupravujeme p ani M
+                        if(!solved_components[second]!!.input.contains(first)) // toto není spoj s first             spoj je (first-in conect second-out)
+                        {
+                            for (third in solved_components[second]!!.input)
+                            {
+                                if (third != "P" && third != "M" && third != first)    // teoretickej check third != first mozna tu nepotrebujeme
+                                {
+                                    if (solved_components[third]!!.input.contains(first))
+                                    {
+                                        var first_val =  "0"
+                                        var second_val =  "0"
+                                        var third_val =  "0"
+                                        val b_sum = solved_components[first]!!.equation + "+" + solved_components[second]!!.equation + "+" + solved_components[third]!!.equation
+                                        if (amp_phase_from_complex(calculate_value(b_sum, 1.0)).first > 0) // realné hodnoty a ne jen dráty
+                                        {
+                                            first_val =  "(" + solved_components[first]!!.equation + "+" + solved_components[second]!!.equation + ")/(" + b_sum + ")"
+                                            second_val =  "(" + solved_components[second]!!.equation + "+" + solved_components[third]!!.equation + ")/(" + b_sum + ")"
+                                            third_val =  "(" + solved_components[third]!!.equation + "+" + solved_components[first]!!.equation + ")/(" + b_sum + ")"
+                                        }
+
+
+                                        add_S_to_components_conenctions(solved_components,first,solved_components[first]!!.input)
+                                        add_S_to_components(solved_components,first_val,solved_components[first]!!.input,1)
+                                        add_S_to_components_conenctions(solved_components,first,solved_components[second]!!.input)
+                                        add_S_to_components(solved_components,second_val,solved_components[first]!!.input,2)
+                                        add_S_to_components_conenctions(solved_components,first,solved_components[third]!!.input)
+                                        add_S_to_components(solved_components,third_val,solved_components[first]!!.input,3)
+
+                                        //přidat do components Sn Sn+1 Sn+2
+
+                                        component_num_S += 3
+                                        // mame trojici first-in second-in third-in
+                                        return true
+                                    }
+                                    if (solved_components[third]!!.output.contains(first))
+                                    {
+                                        // mame trojici first-in second-in third-out
+                                        return true
+                                    }
+                                }
+                            }
+                        }
+                        else                                                                // toto není spoj s first             spoj je (first-in conect second-in)
+                        {
+                            for (third in solved_components[second]!!.output)
+                            {
+                                if (third != "P" && third != "M" && third != first)    // teoretickej check third != first mozna tu nepotrebujeme
+                                {
+                                    if (solved_components[third]!!.input.contains(first))
+                                    {
+                                        // mame trojici first-in second-out third-in
+                                        return true
+                                    }
+                                    if (solved_components[third]!!.output.contains(first))
+                                    {
+                                        // mame trojici first-in second-out third-out
+                                        return true
+                                    }
+                                }
+                            }
+
+                        }
+                    }
+                }
+            }
+        }
+
         return false
     }
 
@@ -1182,6 +1271,63 @@ class MainActivity : ComponentActivity() {
         }
 
         return Pair(center, to-from)
+    }
+
+
+
+    @Composable
+    fun SelectableText(text: String) {
+        SelectionContainer {
+            Text(text)
+        }
+    }
+
+
+    fun add_S_to_components(solved_components: MutableMap<String, Component>,value: String, all_to_add: MutableList<String>,s_number: Int)
+    {
+        val con_components = mutableListOf<String>()
+        if (s_number == 1)
+        {
+            con_components.add("S${component_num_S+1}")
+            con_components.add("S${component_num_S+2}")
+        }
+        if (s_number == 2)
+        {
+            con_components.add("S${component_num_S-1}")
+            con_components.add("S${component_num_S+1}")
+        }
+        if (s_number == 3)
+        {
+            con_components.add("S${component_num_S-2}")
+            con_components.add("S${component_num_S-1}")
+        }
+
+
+        val name = "s$component_num_R"
+        solved_components[name] = Component(
+            equation = value,
+            input = con_components,
+            output = all_to_add,
+            frontPosition = mutableStateOf(Position(getScreenWidth().toFloat()*9/10, getScreenHeight().toFloat()*3/5)),
+            backPosition = mutableStateOf(Position(getScreenWidth().toFloat()*9/10, getScreenHeight().toFloat()*2/5)),
+            image = R.drawable.resistor
+        )
+        component_num_S += 1
+    }
+
+    fun add_S_to_components_conenctions(solved_components: MutableMap<String, Component>,recognition_component: String, all_to_add: MutableList<String>)
+    {
+        for (component_key in all_to_add)
+        {
+            if(solved_components[component_key]!!.input.contains(recognition_component))
+            {
+                solved_components[component_key]!!.input.add("S$component_num_S")
+            }
+            else
+            {
+                solved_components[component_key]!!.output.add("S${component_num_S}")
+            }
+        }
     }
 }
 
