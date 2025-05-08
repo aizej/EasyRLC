@@ -91,6 +91,7 @@ class MainActivity : ComponentActivity() {
     data class Position(var x: Float, var y: Float)
     data class Component(
         var equation: String,
+        var value: String,
         var input: MutableList<String>,
         var output: MutableList<String>,
         val frontPosition: MutableState<Position>,
@@ -100,6 +101,7 @@ class MainActivity : ComponentActivity() {
         fun deepCopy(): Component {
             return Component(
                 equation = this.equation,
+                value = this.value,
                 input = this.input.toMutableList(),      // Create a new mutable list with the same elements
                 output = this.output.toMutableList(),    // Same for output
                 frontPosition = mutableStateOf(this.frontPosition.value.copy()),
@@ -401,17 +403,17 @@ class MainActivity : ComponentActivity() {
                                                 }
 
 
-                                                if (total_equation.value != "0")
+                                                if (total_equation.value != "0" && solved_components.size == 1)
                                                 {
                                                     current_window_shown.value = "graph"
                                                 }
                                                 else
                                                 {
-                                                    Toast.makeText(context, "Add or connect components to BLUE and RED", Toast.LENGTH_LONG).show()
+                                                    Toast.makeText(context, "Cant yet simplify this circuit :(", Toast.LENGTH_LONG).show()
                                                 }
                                             }
                                             else{
-                                                if (current_window_shown.value == "circuit")
+                                                if (current_window_shown.value != "circuit")
                                                 {
                                                     Toast.makeText(context, "Add or connect components to BLUE and RED", Toast.LENGTH_LONG).show()
                                                 }
@@ -662,6 +664,7 @@ class MainActivity : ComponentActivity() {
         val name = "R$component_num_R"
         components[name] = Component(
             equation = value,
+            value = value,
             input = mutableListOf<String>(),
             output = mutableListOf<String>(),
             frontPosition = mutableStateOf(Position(getScreenWidth().toFloat()*9/10, getScreenHeight().toFloat()*3/5)),
@@ -677,6 +680,7 @@ class MainActivity : ComponentActivity() {
         val name = "L$component_num_L"
         components[name] = Component(
             equation = "i*2*3.14159*x*$value",
+            value = value,
             input = mutableListOf<String>(),
             output = mutableListOf<String>(),
             frontPosition = mutableStateOf(Position(getScreenWidth().toFloat()*9/10, getScreenHeight().toFloat()*3/5)),
@@ -693,6 +697,7 @@ class MainActivity : ComponentActivity() {
         val name = "C$component_num_C"
         components[name] = Component(
             equation = "1/(i*2*3.14159*x*$value)",
+            value = value,
             input = mutableListOf<String>(),
             output = mutableListOf<String>(),
             frontPosition = mutableStateOf(Position(getScreenWidth().toFloat()*9/10, getScreenHeight().toFloat()*3/5)),
@@ -708,6 +713,7 @@ class MainActivity : ComponentActivity() {
         val name = "W$component_num_w"
         components[name] = Component(
             equation = "0",
+            value = "",
             input = mutableListOf<String>(),
             output = mutableListOf<String>(),
             frontPosition = mutableStateOf(Position(getScreenWidth().toFloat()*9/10, getScreenHeight().toFloat()*3/5)),
@@ -721,6 +727,7 @@ class MainActivity : ComponentActivity() {
     {
         components["P"] = Component(
             equation = "",
+            value = "",
             input = mutableListOf<String>(),
             output = mutableListOf<String>(),
             frontPosition = mutableStateOf(Position(getScreenWidth().toFloat()*4/10, getScreenHeight().toFloat()*1/5)),
@@ -730,6 +737,7 @@ class MainActivity : ComponentActivity() {
 
         components["M"] = Component(
             equation = "",
+            value = "",
             input = mutableListOf<String>(),
             output = mutableListOf<String>(),
             frontPosition = mutableStateOf(Position(getScreenWidth().toFloat()*4/10, getScreenHeight().toFloat()*8/10)),
@@ -820,8 +828,12 @@ class MainActivity : ComponentActivity() {
                 contentScale = ContentScale.Fit,
                 modifier = Modifier.fillMaxSize()
             )
-            Text(componenta_name)
+            Column{
+                Text(componenta_name)
+                Text(components[componenta_name]!!.value)
+            }
         }
+
 
     }
 
@@ -926,8 +938,8 @@ class MainActivity : ComponentActivity() {
     }
 
     fun simplyfy(solved_components: MutableMap<String, Component>){
-        solved_components.remove("P")
-        solved_components.remove("M")
+        solved_components.remove("P")  // simplification or complication?
+        solved_components.remove("M")  // simplification or complication?
 
         val keysToRemove = solved_components.entries
             .filter { it.value.input.isEmpty() || it.value.output.isEmpty() }
@@ -948,7 +960,7 @@ class MainActivity : ComponentActivity() {
 
     fun simplyfy_step(solved_components: MutableMap<String, Component>): Boolean
     {
-        Log.d("components","${solved_components}")
+        //Log.d("components","${solved_components}")
         if(simplyfy_paraler(solved_components))
         {
             return true
@@ -959,13 +971,18 @@ class MainActivity : ComponentActivity() {
             return true
         }
 
+        if (simplyfy_delta_star(solved_components))
+        {
+            return true
+        }
+
         return false
     }
 
     fun deletecomponent(solved_components: MutableMap<String, Component>,component_to_delete: String)
     {
         //Log.d("components","$solved_components")          //bugtesting
-        Log.d("deleting_component",component_to_delete)
+        //Log.d("deleting_component",component_to_delete)
         solved_components.remove(component_to_delete)
         solved_components.entries.forEach { (component, _) ->
             solved_components[component]!!.input.remove(component_to_delete)
@@ -1015,21 +1032,46 @@ class MainActivity : ComponentActivity() {
                                         }
 
 
-                                        add_S_to_components_conenctions(solved_components,first,solved_components[first]!!.input)
-                                        add_S_to_components(solved_components,first_val,solved_components[first]!!.input,1)
-                                        add_S_to_components_conenctions(solved_components,first,solved_components[second]!!.input)
-                                        add_S_to_components(solved_components,second_val,solved_components[first]!!.input,2)
-                                        add_S_to_components_conenctions(solved_components,first,solved_components[third]!!.input)
-                                        add_S_to_components(solved_components,third_val,solved_components[first]!!.input,3)
+                                        add_S_to_components_conenctions(solved_components, first, solved_components[first]!!.input)
+                                        add_S_to_components(solved_components, first_val, solved_components[first]!!.input, 1)
 
-                                        //přidat do components Sn Sn+1 Sn+2
+                                        add_S_to_components_conenctions(solved_components, second, solved_components[second]!!.input)
+                                        add_S_to_components(solved_components, second_val, solved_components[second]!!.input, 2)
 
-                                        component_num_S += 3
+                                        add_S_to_components_conenctions(solved_components, third, solved_components[third]!!.input)
+                                        add_S_to_components(solved_components, third_val, solved_components[third]!!.input, 3)
+
+                                        deletecomponent(solved_components, first)
+                                        deletecomponent(solved_components, second)
+                                        deletecomponent(solved_components, third)
                                         // mame trojici first-in second-in third-in
                                         return true
                                     }
                                     if (solved_components[third]!!.output.contains(first))
                                     {
+                                        var first_val =  "0"
+                                        var second_val =  "0"
+                                        var third_val =  "0"
+                                        val b_sum = solved_components[first]!!.equation + "+" + solved_components[second]!!.equation + "+" + solved_components[third]!!.equation
+                                        if (amp_phase_from_complex(calculate_value(b_sum, 1.0)).first > 0) // realné hodnoty a ne jen dráty
+                                        {
+                                            first_val =  "(" + solved_components[first]!!.equation + "+" + solved_components[second]!!.equation + ")/(" + b_sum + ")"
+                                            second_val =  "(" + solved_components[second]!!.equation + "+" + solved_components[third]!!.equation + ")/(" + b_sum + ")"
+                                            third_val =  "(" + solved_components[third]!!.equation + "+" + solved_components[first]!!.equation + ")/(" + b_sum + ")"
+                                        }
+
+                                        add_S_to_components_conenctions(solved_components, first, solved_components[first]!!.input)
+                                        add_S_to_components(solved_components, first_val, solved_components[first]!!.input, 1)
+
+                                        add_S_to_components_conenctions(solved_components, second, solved_components[second]!!.input)
+                                        add_S_to_components(solved_components, second_val, solved_components[second]!!.input, 2)
+
+                                        add_S_to_components_conenctions(solved_components, third, solved_components[third]!!.output)
+                                        add_S_to_components(solved_components, third_val, solved_components[third]!!.output, 3)
+
+                                        deletecomponent(solved_components, first)
+                                        deletecomponent(solved_components, second)
+                                        deletecomponent(solved_components, third)
                                         // mame trojici first-in second-in third-out
                                         return true
                                     }
@@ -1044,17 +1086,62 @@ class MainActivity : ComponentActivity() {
                                 {
                                     if (solved_components[third]!!.input.contains(first))
                                     {
+                                        var first_val =  "0"
+                                        var second_val =  "0"
+                                        var third_val =  "0"
+                                        val b_sum = solved_components[first]!!.equation + "+" + solved_components[second]!!.equation + "+" + solved_components[third]!!.equation
+                                        if (amp_phase_from_complex(calculate_value(b_sum, 1.0)).first > 0) // realné hodnoty a ne jen dráty
+                                        {
+                                            first_val =  "(" + solved_components[first]!!.equation + "+" + solved_components[second]!!.equation + ")/(" + b_sum + ")"
+                                            second_val =  "(" + solved_components[second]!!.equation + "+" + solved_components[third]!!.equation + ")/(" + b_sum + ")"
+                                            third_val =  "(" + solved_components[third]!!.equation + "+" + solved_components[first]!!.equation + ")/(" + b_sum + ")"
+                                        }
+
+                                        add_S_to_components_conenctions(solved_components, first, solved_components[first]!!.input)
+                                        add_S_to_components(solved_components, first_val, solved_components[first]!!.input, 1)
+
+                                        add_S_to_components_conenctions(solved_components, second, solved_components[second]!!.output)
+                                        add_S_to_components(solved_components, second_val, solved_components[second]!!.output, 2)
+
+                                        add_S_to_components_conenctions(solved_components, third, solved_components[third]!!.input)
+                                        add_S_to_components(solved_components, third_val, solved_components[third]!!.input, 3)
+
+                                        deletecomponent(solved_components, first)
+                                        deletecomponent(solved_components, second)
+                                        deletecomponent(solved_components, third)
                                         // mame trojici first-in second-out third-in
                                         return true
                                     }
                                     if (solved_components[third]!!.output.contains(first))
                                     {
+                                        var first_val =  "0"
+                                        var second_val =  "0"
+                                        var third_val =  "0"
+                                        val b_sum = solved_components[first]!!.equation + "+" + solved_components[second]!!.equation + "+" + solved_components[third]!!.equation
+                                        if (amp_phase_from_complex(calculate_value(b_sum, 1.0)).first > 0) // realné hodnoty a ne jen dráty
+                                        {
+                                            first_val =  "(" + solved_components[first]!!.equation + "+" + solved_components[second]!!.equation + ")/(" + b_sum + ")"
+                                            second_val =  "(" + solved_components[second]!!.equation + "+" + solved_components[third]!!.equation + ")/(" + b_sum + ")"
+                                            third_val =  "(" + solved_components[third]!!.equation + "+" + solved_components[first]!!.equation + ")/(" + b_sum + ")"
+                                        }
+
+                                        add_S_to_components_conenctions(solved_components, first, solved_components[first]!!.input)
+                                        add_S_to_components(solved_components, first_val, solved_components[first]!!.input, 1)
+
+                                        add_S_to_components_conenctions(solved_components, second, solved_components[second]!!.output)
+                                        add_S_to_components(solved_components, second_val, solved_components[second]!!.output, 2)
+
+                                        add_S_to_components_conenctions(solved_components, third, solved_components[third]!!.output)
+                                        add_S_to_components(solved_components, third_val, solved_components[third]!!.output, 3)
+
+                                        deletecomponent(solved_components, first)
+                                        deletecomponent(solved_components, second)
+                                        deletecomponent(solved_components, third)
                                         // mame trojici first-in second-out third-out
                                         return true
                                     }
                                 }
                             }
-
                         }
                     }
                 }
@@ -1303,9 +1390,11 @@ class MainActivity : ComponentActivity() {
         }
 
 
-        val name = "s$component_num_R"
+        val name = "S$component_num_S"
+        //Log.d("components add:",name)    //debug
         solved_components[name] = Component(
             equation = value,
+            value = "",
             input = con_components,
             output = all_to_add,
             frontPosition = mutableStateOf(Position(getScreenWidth().toFloat()*9/10, getScreenHeight().toFloat()*3/5)),
@@ -1319,13 +1408,17 @@ class MainActivity : ComponentActivity() {
     {
         for (component_key in all_to_add)
         {
-            if(solved_components[component_key]!!.input.contains(recognition_component))
+            if (component_key != "P" && component_key != "M")
             {
-                solved_components[component_key]!!.input.add("S$component_num_S")
-            }
-            else
-            {
-                solved_components[component_key]!!.output.add("S${component_num_S}")
+                //Log.d("adding S$component_num_S to :", component_key)   //debug
+                if(solved_components[component_key]!!.input.contains(recognition_component))
+                {
+                    solved_components[component_key]!!.input.add("S$component_num_S")
+                }
+                else
+                {
+                    solved_components[component_key]!!.output.add("S${component_num_S}")
+                }
             }
         }
     }
