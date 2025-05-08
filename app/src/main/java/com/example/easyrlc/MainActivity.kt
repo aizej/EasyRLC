@@ -78,6 +78,7 @@ import kotlin.math.min
 import kotlin.math.max
 import kotlin.math.pow
 import kotlin.math.sign
+import com.aizej.easyrlc.R
 
 
 class MainActivity : ComponentActivity() {

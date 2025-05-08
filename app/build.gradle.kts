@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.easyrlc"
+    namespace = "com.aizej.easyrlc"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.easyrlc"
+        applicationId = "com.aizej.easyrlc"
         minSdk = 32
         targetSdk = 35
         versionCode = 1
