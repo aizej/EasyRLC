@@ -1,4 +1,4 @@
-package com.example.easyrlc
+package com.aizej.easyrlc
 
 import org.junit.Test
 

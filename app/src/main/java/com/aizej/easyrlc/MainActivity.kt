@@ -1,4 +1,4 @@
-package com.example.easyrlc
+package com.aizej.easyrlc
 
 import android.content.res.Resources
 import android.os.Bundle
@@ -30,14 +30,8 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableStateMapOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
@@ -48,21 +42,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import com.example.easyrlc.MainActivity.Position
+import androidx.core.text.isDigitsOnly
+import com.aizej.easyrlc.MainActivity.Position
 import com.jetpack.multipledraggable.MultipleDraggableTheme
 import com.jetpack.multipledraggable.Purple500
-import kotlin.collections.component1
-import kotlin.collections.component2
-import kotlin.math.PI
-import kotlin.math.atan2
-import kotlin.math.roundToInt
-import kotlin.math.sqrt
-import com.tecacet.komplex.Complex
-import kotlin.math.atan
-
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.core.text.isDigitsOnly
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberBottom
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberStart
@@ -72,14 +55,18 @@ import com.patrykandpatrick.vico.core.cartesian.axis.HorizontalAxis
 import com.patrykandpatrick.vico.core.cartesian.axis.VerticalAxis
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModel
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
-
 import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
-import kotlin.math.min
+import com.tecacet.komplex.Complex
+import kotlin.math.PI
+import kotlin.math.atan
+import kotlin.math.atan2
 import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.pow
+import kotlin.math.roundToInt
 import kotlin.math.sign
+import kotlin.math.sqrt
 import com.aizej.easyrlc.R
-
 
 class MainActivity : ComponentActivity() {
     var component_num_R = 1
