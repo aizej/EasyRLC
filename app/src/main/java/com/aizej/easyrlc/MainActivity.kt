@@ -377,38 +377,41 @@ class MainActivity : ComponentActivity() {
                                             if (solved_components.size != 2){
                                                 simplyfy(solved_components)
 
-                                                solved_components.entries.forEach { (key, _) -> total_equation.value = solved_components[key]!!.equation } // there should be only one component
-
-                                                var data = getvalues_for_initial_graph(total_equation.value, graph_from.value,graph_to.value)
-                                                abs_graph_data.value = data.first
-                                                phase_graph_data.value = data.second
-                                                //Log.d("autorange_posible","${phase_graph_data.value[0].y != phase_graph_data.value[graph_lenght-1].y}")
-                                                if (phase_graph_data.value[0].y != phase_graph_data.value[graph_lenght-1].y)  // cant estimate graph for just L C
-                                                {
-                                                    val newrange = get_range_automaticaly(phase_graph_data.value,total_equation.value)
-                                                    if (newrange.first != (-1).toFloat())
-                                                    {
-                                                        graph_from.value = newrange.first.toDouble()
-                                                        graph_to.value = newrange.second.toDouble()
-                                                    }
-
-                                                    data = getvalues_for_initial_graph(total_equation.value, graph_from.value,graph_to.value)
-                                                    abs_graph_data.value = data.first
-                                                    phase_graph_data.value = data.second
-                                                }
-
 
                                                 if (total_equation.value != "0" && solved_components.size == 1)
                                                 {
+                                                    solved_components.entries.forEach { (key, _) -> total_equation.value = solved_components[key]!!.equation } // there should be only one component
+
+                                                    var data = getvalues_for_initial_graph(total_equation.value, graph_from.value,graph_to.value)
+                                                    abs_graph_data.value = data.first
+                                                    phase_graph_data.value = data.second
+                                                    //Log.d("autorange_posible","${phase_graph_data.value[0].y != phase_graph_data.value[graph_lenght-1].y}")
+                                                    if (phase_graph_data.value[0].y != phase_graph_data.value[graph_lenght-1].y)  // cant estimate graph for just L C
+                                                    {
+                                                        val newrange = get_range_automaticaly(phase_graph_data.value,total_equation.value)
+                                                        if (newrange.first != (-1).toFloat())
+                                                        {
+                                                            graph_from.value = newrange.first.toDouble()
+                                                            graph_to.value = newrange.second.toDouble()
+                                                        }
+
+                                                        data = getvalues_for_initial_graph(total_equation.value, graph_from.value,graph_to.value)
+                                                        abs_graph_data.value = data.first
+                                                        phase_graph_data.value = data.second
+                                                    }
+
+
                                                     current_window_shown.value = "graph"
                                                 }
                                                 else
                                                 {
+                                                    Log.d("test","${total_equation.value}")
+                                                    Log.d("test","${solved_components.size}")
                                                     Toast.makeText(context, "Cant yet simplify this circuit :(", Toast.LENGTH_LONG).show()
                                                 }
                                             }
                                             else{
-                                                if (current_window_shown.value != "circuit")
+                                                if (current_window_shown.value == "circuit")
                                                 {
                                                     Toast.makeText(context, "Add or connect components to BLUE and RED", Toast.LENGTH_LONG).show()
                                                 }
