@@ -12,7 +12,7 @@ android {
         applicationId = "com.aizej.easyrlc"
         minSdk = 32
         targetSdk = 35
-        versionCode = 1
+        versionCode = 2
         versionName = "1.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
