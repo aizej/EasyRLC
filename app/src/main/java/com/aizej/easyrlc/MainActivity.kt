@@ -121,7 +121,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            MultipleDraggableTheme {
+            MultipleDraggableTheme (darkTheme = false){
                 Surface(color = MaterialTheme.colors.background) {
                     // Use remember to keep components state across recompositions
                     val components = remember { mutableStateMapOf<String, Component>() }
