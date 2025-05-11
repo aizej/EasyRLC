@@ -389,10 +389,19 @@ class MainActivity : ComponentActivity() {
                                                     if (phase_graph_data.value[0].y != phase_graph_data.value[graph_lenght-1].y)  // cant estimate graph for just L C
                                                     {
                                                         val newrange = get_range_automaticaly(phase_graph_data.value,total_equation.value)
+                                                        Log.d("autorange:","${newrange}")
                                                         if (newrange.first != (-1).toFloat())
                                                         {
-                                                            graph_from.value = newrange.first.toDouble()
-                                                            graph_to.value = newrange.second.toDouble()
+                                                            if (newrange.first == newrange.second)
+                                                            {
+                                                                graph_from.value = (newrange.first*0.9).toDouble()
+                                                                graph_to.value = (newrange.second*1.1).toDouble()
+                                                            }
+                                                            else
+                                                            {
+                                                                graph_from.value = newrange.first.toDouble()
+                                                                graph_to.value = newrange.second.toDouble()
+                                                            }
                                                         }
 
                                                         data = getvalues_for_initial_graph(total_equation.value, graph_from.value,graph_to.value)
