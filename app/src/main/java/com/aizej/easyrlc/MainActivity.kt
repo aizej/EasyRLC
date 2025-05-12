@@ -26,10 +26,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
+import androidx.compose.material.ButtonDefaults
+import androidx.compose.material.ContentAlpha
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
+import androidx.compose.material.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -55,6 +58,7 @@ import com.aizej.easyrlc.MainActivity.Position
 import com.jetpack.multipledraggable.MultipleDraggableTheme
 import com.jetpack.multipledraggable.Purple500
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
+import com.patrykandpatrick.vico.compose.cartesian.axis.rememberAxisLabelComponent
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberBottom
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberStart
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLineCartesianLayer
@@ -121,8 +125,26 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            MultipleDraggableTheme (darkTheme = false){
+            MultipleDraggableTheme (){
                 Surface(color = MaterialTheme.colors.background) {
+                    val textFieldColors = TextFieldDefaults.outlinedTextFieldColors(
+                        textColor              = MaterialTheme.colors.onSurface,
+                        backgroundColor        = MaterialTheme.colors.surface,
+                        cursorColor            = MaterialTheme.colors.primary,
+                        focusedBorderColor     = MaterialTheme.colors.primary,
+                        unfocusedBorderColor   = MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.disabled),
+                        placeholderColor       = MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.medium)
+                    )
+
+                    val Buttoncolors = ButtonDefaults.buttonColors(
+                        backgroundColor = MaterialTheme.colors.primary,
+                        contentColor    = MaterialTheme.colors.onPrimary,
+                        disabledBackgroundColor = MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.disabled),
+                        disabledContentColor    = MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.disabled)
+                    )
+
+                    val Textcolor = MaterialTheme.colors.onBackground
+
                     // Use remember to keep components state across recompositions
                     val components = remember { mutableStateMapOf<String, Component>() }
                     var current_window_shown = remember { mutableStateOf("circuit") }
@@ -171,7 +193,8 @@ class MainActivity : ComponentActivity() {
                                 ) {
                                     var R_spawn_text by remember { mutableStateOf("") }
 
-                                    Button(onClick = {
+                                    Button(colors = Buttoncolors,
+                                        onClick = {
                                         if(R_spawn_text == "")
                                         {
                                             Toast.makeText(context, "Chose value!", Toast.LENGTH_SHORT).show()
@@ -180,13 +203,14 @@ class MainActivity : ComponentActivity() {
                                             add_resistor_to_components(components, R_spawn_text)
                                         }
                                     }) {
-                                        Text("R")
+                                        Text("R", color = Color.Black)
                                     }
 
                                     OutlinedTextField(
+                                        colors = textFieldColors,
                                         value = R_spawn_text,
                                         onValueChange = { if (it.replace(".","").isDigitsOnly()) R_spawn_text = it },
-                                        label = { Text("Ω") }
+                                        label = { Text("Ω", color = MaterialTheme.colors.onBackground) }
                                     )
                                 }
 
@@ -202,7 +226,8 @@ class MainActivity : ComponentActivity() {
                                 ) {
                                     var L_spawn_text by remember { mutableStateOf("") }
 
-                                    Button(onClick = {
+                                    Button(colors = Buttoncolors,
+                                        onClick = {
                                         if(L_spawn_text == "")
                                         {
                                             Toast.makeText(context, "Chose value!", Toast.LENGTH_SHORT).show()
@@ -211,13 +236,14 @@ class MainActivity : ComponentActivity() {
                                             add_inductor_to_components(components, L_spawn_text)
                                         }
                                     }) {
-                                        Text("L")
+                                        Text("L", color = Color.Black)
                                     }
 
                                     OutlinedTextField(
+                                        colors = textFieldColors,
                                         value = L_spawn_text,
                                         onValueChange = { if (it.replace(".","").isDigitsOnly()) L_spawn_text = it },
-                                        label = { Text("H") }
+                                        label = { Text("H", color = MaterialTheme.colors.onBackground) }
                                     )
                                 }
 
@@ -233,7 +259,8 @@ class MainActivity : ComponentActivity() {
                                 ) {
                                     var C_spawn_text by remember { mutableStateOf("") }
 
-                                    Button(onClick = {
+                                    Button(colors = Buttoncolors,
+                                        onClick = {
                                         if(C_spawn_text == "")
                                         {
                                             Toast.makeText(context, "Chose value!", Toast.LENGTH_SHORT).show()
@@ -242,13 +269,14 @@ class MainActivity : ComponentActivity() {
                                             add_capacitor_to_components(components, C_spawn_text)
                                         }
                                     }) {
-                                        Text("C")
+                                        Text("C", color = Color.Black)
                                     }
 
                                     OutlinedTextField(
+                                        colors = textFieldColors,
                                         value = C_spawn_text,
                                         onValueChange = { if (it.replace(".","").isDigitsOnly()) C_spawn_text = it },
-                                        label = { Text("F") }
+                                        label = { Text("F", color = MaterialTheme.colors.onBackground) }
                                     )
                                 }
 
@@ -260,8 +288,9 @@ class MainActivity : ComponentActivity() {
                                     verticalArrangement = Arrangement.Center,
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
-                                    Button(onClick = {add_wire_to_components(components)}) {
-                                        Text("WIRE")
+                                    Button(colors = Buttoncolors,
+                                        onClick = {add_wire_to_components(components)}) {
+                                        Text("WIRE", color = Color.Black)
                                     }
                                     /*
                                     Box(
@@ -312,12 +341,14 @@ class MainActivity : ComponentActivity() {
                             ){
                                 if(current_window_shown.value == "graph")
                                 {
-                                    Button(onClick = {show_equation.value = !show_equation.value })
+                                    Button(colors = Buttoncolors,
+                                        onClick = {show_equation.value = !show_equation.value })
                                     {
-                                        Text("EQUATION")
+                                        Text("EQUATION", color = Color.Black)
                                     }
 
-                                    Button(onClick =
+                                    Button(colors = Buttoncolors,
+                                        onClick =
                                         {
                                             //check if 0 is in phase graph range
                                             val is_zero_in_range = sign(phase_graph_data.value[0].y) == -1*sign(phase_graph_data.value[graph_lenght-1].y)
@@ -358,12 +389,13 @@ class MainActivity : ComponentActivity() {
                                             show_stats.value = !show_stats.value
                                         })
                                     {
-                                        Text("STATS")
+                                        Text("STATS", color = Color.Black)
                                     }
                                 }
 
 
-                                Button(onClick =
+                                Button(colors = Buttoncolors,
+                                    onClick =
                                     {
                                         if(current_window_shown.value != "graph")
                                         {
@@ -432,7 +464,7 @@ class MainActivity : ComponentActivity() {
                                         }
                                     })
                                 {
-                                    Text("GRAPH")
+                                    Text("GRAPH", color = Color.Black)
                                 }
                             }
 
@@ -483,27 +515,34 @@ class MainActivity : ComponentActivity() {
                                         val Z_imaginary = remember {mutableStateOf(0.0)}
 
 
-                                        OutlinedTextField(modifier = Modifier
+                                        OutlinedTextField(
+                                            colors = textFieldColors,
+                                            modifier = Modifier
                                             .weight(2f),
                                             value = frequency_from.value,
                                             onValueChange = { if (it.replace(".","").isDigitsOnly()) frequency_from.value = it },
-                                            label = { Text("from") }
+                                            label = { Text("from", color = MaterialTheme.colors.onBackground) }
                                         )
-                                        OutlinedTextField(modifier = Modifier
+                                        OutlinedTextField(
+                                            colors = textFieldColors,
+                                            modifier = Modifier
                                             .weight(1.5f),
                                             value = frequency_to.value,
                                             onValueChange = { if (it.replace(".","").isDigitsOnly()) frequency_to.value = it },
-                                            label = { Text("to") }
+                                            label = { Text("to", color = MaterialTheme.colors.onBackground) }
                                         )
 
-                                        OutlinedTextField(modifier = Modifier
+                                        OutlinedTextField(
+                                            colors = textFieldColors,
+                                            modifier = Modifier
                                             .weight(2.3f),
                                             value = frequency_textfield_text,
                                             onValueChange = { if (it.replace(".","").isDigitsOnly()) frequency_textfield_text = it },
-                                            label = { Text("exact") }
+                                            label = { Text("exact", color = MaterialTheme.colors.onBackground) }
                                         )
 
-                                        Button(onClick = {
+                                        Button(colors = Buttoncolors,
+                                            onClick = {
                                             if (frequency_from.value != "" && frequency_to.value != "")
                                             {
                                                 graph_from.value = frequency_from.value.toDouble()
@@ -559,15 +598,15 @@ class MainActivity : ComponentActivity() {
                                             modifier = Modifier
                                             .weight(1.2f)) {
 
-                                            Text("=")
+                                            Text("=", color = Color.Black)
                                         }
 
 
                                         Column(modifier = Modifier
                                             .weight(4f))
                                         {
-                                            Text("${Z_amount.value}∠${Z_phase.value}°")
-                                            Text("(${Z_real.value}, i${Z_imaginary.value})")
+                                            Text("${Z_amount.value}∠${Z_phase.value}°", color = Color.Black)
+                                            Text("(${Z_real.value}, i${Z_imaginary.value})", color = Color.Black)
                                         }
                                     }
                                     MyChart(abs_graph_data.value)
@@ -836,8 +875,8 @@ class MainActivity : ComponentActivity() {
                 modifier = Modifier.fillMaxSize()
             )
             Column{
-                Text(componenta_name)
-                Text(components[componenta_name]!!.value)
+                Text(componenta_name, color = Color.Black)
+                Text(components[componenta_name]!!.value, color = Color.Black)
             }
         }
 
@@ -1317,8 +1356,8 @@ class MainActivity : ComponentActivity() {
         CartesianChartHost(
             chart = rememberCartesianChart(
                 rememberLineCartesianLayer(),
-                startAxis = VerticalAxis.rememberStart(),  // Y axis
-                bottomAxis = HorizontalAxis.rememberBottom(), // X axis
+                startAxis = VerticalAxis.rememberStart(label =  rememberAxisLabelComponent(color = Color.Black)),  // Y axis
+                bottomAxis = HorizontalAxis.rememberBottom(label =  rememberAxisLabelComponent(color = Color.Black)), // X axis
                 getXStep = fixedGetXStep
             ),
             modelProducer = modelProducer,
@@ -1372,7 +1411,7 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun SelectableText(text: String) {
         SelectionContainer {
-            Text(text)
+            Text(text, color = Color.Black)
         }
     }
 
