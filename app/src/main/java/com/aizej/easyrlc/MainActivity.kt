@@ -875,8 +875,10 @@ class MainActivity : ComponentActivity() {
                 modifier = Modifier.fillMaxSize()
             )
             Column{
-                Text(componenta_name, color = Color.Black)
-                Text(components[componenta_name]!!.value, color = Color.Black)
+                if(componenta_name.first() != 'W'){
+                    Text(componenta_name, color = Color.Black)
+                    Text(components[componenta_name]!!.value, color = Color.Black)
+                }
             }
         }
 
