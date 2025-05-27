@@ -154,6 +154,9 @@ class MainActivity : ComponentActivity() {
                     var phase_graph_data = remember { mutableStateOf(listOf<Point>()) }
                     var graph_from = remember { mutableStateOf(graph_absolute_start_at) }
                     var graph_to = remember { mutableStateOf(graph_absolute_end_at) }
+                    val Calculator_L = remember { mutableStateOf("") }
+                    val Calculator_C = remember { mutableStateOf("") }
+                    val Calculator_F = remember { mutableStateOf("") }
                     
                     val context = LocalContext.current
 
@@ -337,7 +340,7 @@ class MainActivity : ComponentActivity() {
                                 .fillMaxWidth()
                                 .height(60.dp),
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.End
+                                horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.End)
                             ){
                                 if(current_window_shown.value == "graph")
                                 {
@@ -394,77 +397,99 @@ class MainActivity : ComponentActivity() {
                                 }
 
 
-                                Button(colors = Buttoncolors,
-                                    onClick =
-                                    {
-                                        if(current_window_shown.value != "graph")
-                                        {
-                                            show_stats.value = false
-                                            graph_from.value = graph_absolute_start_at
-                                            graph_to.value = graph_absolute_end_at
+
+                                if(current_window_shown.value == "circuit" || current_window_shown.value == "calculator")
+                                {
+                                    Button(colors = Buttoncolors,
+                                        onClick = {
+                                            if(current_window_shown.value == "circuit")
+                                            {
+                                                current_window_shown.value = "calculator"
+                                            }
+                                            else
+                                            {
+                                                current_window_shown.value = "circuit"
+                                            }
+                                        }) {
+                                        Text("CALCULATOR", color = Color.Black)
+                                    }
+                                }
 
 
-                                            var solved_components = components.mapValues { it.value.deepCopy() }.toMutableMap()
-
-                                            if (solved_components.size != 2){
-                                                simplyfy(solved_components)
-
-
-                                                if (total_equation.value != "0" && solved_components.size == 1)
+                                if(current_window_shown.value == "circuit" || current_window_shown.value == "graph")
+                                {
+                                    Button(colors = Buttoncolors,
+                                        onClick =
+                                            {
+                                                if(current_window_shown.value != "graph")
                                                 {
-                                                    solved_components.entries.forEach { (key, _) -> total_equation.value = solved_components[key]!!.equation } // there should be only one component
+                                                    show_stats.value = false
+                                                    graph_from.value = graph_absolute_start_at
+                                                    graph_to.value = graph_absolute_end_at
 
-                                                    var data = getvalues_for_initial_graph(total_equation.value, graph_from.value,graph_to.value)
-                                                    abs_graph_data.value = data.first
-                                                    phase_graph_data.value = data.second
-                                                    //Log.d("autorange_posible","${phase_graph_data.value[0].y != phase_graph_data.value[graph_lenght-1].y}")
-                                                    if (phase_graph_data.value[0].y != phase_graph_data.value[graph_lenght-1].y)  // cant estimate graph for just L C
-                                                    {
-                                                        val newrange = get_range_automaticaly(phase_graph_data.value,total_equation.value)
-                                                        Log.d("autorange:","${newrange}")
-                                                        if (newrange.first != (-1).toFloat())
+
+                                                    var solved_components = components.mapValues { it.value.deepCopy() }.toMutableMap()
+
+                                                    if (solved_components.size != 2){
+                                                        simplyfy(solved_components)
+
+
+                                                        if (total_equation.value != "0" && solved_components.size == 1)
                                                         {
-                                                            if (newrange.first == newrange.second)
+                                                            solved_components.entries.forEach { (key, _) -> total_equation.value = solved_components[key]!!.equation } // there should be only one component
+
+                                                            var data = getvalues_for_initial_graph(total_equation.value, graph_from.value,graph_to.value)
+                                                            abs_graph_data.value = data.first
+                                                            phase_graph_data.value = data.second
+                                                            //Log.d("autorange_posible","${phase_graph_data.value[0].y != phase_graph_data.value[graph_lenght-1].y}")
+                                                            if (phase_graph_data.value[0].y != phase_graph_data.value[graph_lenght-1].y)  // cant estimate graph for just L C
                                                             {
-                                                                graph_from.value = (newrange.first*0.9).toDouble()
-                                                                graph_to.value = (newrange.second*1.1).toDouble()
+                                                                val newrange = get_range_automaticaly(phase_graph_data.value,total_equation.value)
+                                                                Log.d("autorange:","${newrange}")
+                                                                if (newrange.first != (-1).toFloat())
+                                                                {
+                                                                    if (newrange.first == newrange.second)
+                                                                    {
+                                                                        graph_from.value = (newrange.first*0.9).toDouble()
+                                                                        graph_to.value = (newrange.second*1.1).toDouble()
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        graph_from.value = newrange.first.toDouble()
+                                                                        graph_to.value = newrange.second.toDouble()
+                                                                    }
+                                                                }
+
+                                                                data = getvalues_for_initial_graph(total_equation.value, graph_from.value,graph_to.value)
+                                                                abs_graph_data.value = data.first
+                                                                phase_graph_data.value = data.second
                                                             }
-                                                            else
-                                                            {
-                                                                graph_from.value = newrange.first.toDouble()
-                                                                graph_to.value = newrange.second.toDouble()
-                                                            }
+
+
+                                                            current_window_shown.value = "graph"
                                                         }
-
-                                                        data = getvalues_for_initial_graph(total_equation.value, graph_from.value,graph_to.value)
-                                                        abs_graph_data.value = data.first
-                                                        phase_graph_data.value = data.second
+                                                        else
+                                                        {
+                                                            Log.d("test","${total_equation.value}")
+                                                            Log.d("test","${solved_components.size}")
+                                                            Toast.makeText(context, "Cant yet simplify this circuit :(", Toast.LENGTH_LONG).show()
+                                                        }
                                                     }
-
-
-                                                    current_window_shown.value = "graph"
+                                                    else{
+                                                        if (current_window_shown.value == "circuit")
+                                                        {
+                                                            Toast.makeText(context, "Add or connect components to BLUE and RED", Toast.LENGTH_LONG).show()
+                                                        }
+                                                    }
                                                 }
                                                 else
                                                 {
-                                                    Log.d("test","${total_equation.value}")
-                                                    Log.d("test","${solved_components.size}")
-                                                    Toast.makeText(context, "Cant yet simplify this circuit :(", Toast.LENGTH_LONG).show()
+                                                    current_window_shown.value = "circuit"
                                                 }
-                                            }
-                                            else{
-                                                if (current_window_shown.value == "circuit")
-                                                {
-                                                    Toast.makeText(context, "Add or connect components to BLUE and RED", Toast.LENGTH_LONG).show()
-                                                }
-                                            }
-                                        }
-                                        else
-                                        {
-                                            current_window_shown.value = "circuit"
-                                        }
-                                    })
-                                {
-                                    Text("GRAPH", color = Color.Black)
+                                            })
+                                    {
+                                        Text("GRAPH", color = Color.Black)
+                                    }
                                 }
                             }
 
@@ -656,6 +681,90 @@ class MainActivity : ComponentActivity() {
                         }
                         Connect_near_components(components = components)
                     }
+
+
+                    if (current_window_shown.value == "calculator")
+                    {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(20.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ){
+                            Spacer(Modifier.height(50.dp))
+                            Row (){
+
+                                Column (modifier = Modifier
+                                    .padding(5.dp),
+                                    verticalArrangement = Arrangement.spacedBy(40.dp)){
+                                    Text("Inductance:", color = MaterialTheme.colors.onBackground)
+                                    Text("Capacitance:", color = MaterialTheme.colors.onBackground)
+                                    Text("Resonation\n Frequency:", color = MaterialTheme.colors.onBackground)
+                                }
+                                Column {
+                                    OutlinedTextField(
+                                        colors = textFieldColors,
+                                        value = Calculator_L.value,
+                                        onValueChange = { if (it.replace(".","").replace("E","").replace("-","").replace("+","").isDigitsOnly()) Calculator_L.value = it },
+                                        label = { Text("H", color = MaterialTheme.colors.onBackground) }
+                                    )
+                                    OutlinedTextField(
+                                        colors = textFieldColors,
+                                        value = Calculator_C.value,
+                                        onValueChange = { if (it.replace(".","").replace("E","").replace("-","").replace("+","").isDigitsOnly()) Calculator_C.value = it },
+                                        label = { Text("F", color = MaterialTheme.colors.onBackground) }
+                                    )
+                                    OutlinedTextField(
+                                        colors = textFieldColors,
+                                        value = Calculator_F.value,
+                                        onValueChange = { if (it.replace(".","").replace("E","").replace("-","").replace("+","").isDigitsOnly()) Calculator_F.value = it },
+                                        label = { Text("Hz", color = MaterialTheme.colors.onBackground) }
+                                    )
+                                }
+
+
+                            }
+
+                            Button(colors = Buttoncolors,
+                                onClick = {
+
+                                    if (bool_to_int(check_string_isnt_any_of_empty_or_not_number_or_zero(Calculator_L.value))
+                                        +bool_to_int(check_string_isnt_any_of_empty_or_not_number_or_zero(Calculator_C.value))
+                                        +bool_to_int(check_string_isnt_any_of_empty_or_not_number_or_zero(Calculator_F.value)) >= 2)
+                                    {
+                                        if (check_string_isnt_any_of_empty_or_not_number_or_zero(Calculator_L.value))
+                                        {
+                                            if (check_string_isnt_any_of_empty_or_not_number_or_zero(Calculator_C.value))
+                                            {
+                                                Calculator_F.value = (1/(2*PI*sqrt(Calculator_L.value.toDouble()*Calculator_C.value.toDouble()))).toString()
+                                            }
+                                            else
+                                            {
+                                                Calculator_C.value = (1/(4*PI.pow(2)*Calculator_L.value.toDouble()*Calculator_F.value.toDouble().pow(2))).toString()
+                                            }
+                                        }
+                                        else
+                                        {
+                                            if (check_string_isnt_any_of_empty_or_not_number_or_zero(Calculator_C.value))
+                                            {
+                                                if (check_string_isnt_any_of_empty_or_not_number_or_zero(Calculator_F.value))
+                                                {
+                                                    Calculator_L.value = (1/(4*PI.pow(2)*Calculator_C.value.toDouble()*Calculator_F.value.toDouble().pow(2))).toString()
+                                                }
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        Toast.makeText(context, "Chose 2 out of 3 values. The last one will be calculated!", Toast.LENGTH_LONG).show()
+                                    }
+                                })
+                            {
+                                Text("=", color = Color.Black)
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -725,7 +834,7 @@ class MainActivity : ComponentActivity() {
     {
         val name = "L$component_num_L"
         components[name] = Component(
-            equation = "i*2*3.14159*x*$value",
+            equation = "i*2*π*x*$value",
             value = value,
             input = mutableListOf<String>(),
             output = mutableListOf<String>(),
@@ -742,7 +851,7 @@ class MainActivity : ComponentActivity() {
     {
         val name = "C$component_num_C"
         components[name] = Component(
-            equation = "1/(i*2*3.14159*x*$value)",
+            equation = "1/(i*2*π*x*$value)",
             value = value,
             input = mutableListOf<String>(),
             output = mutableListOf<String>(),
@@ -1556,6 +1665,41 @@ val operators = mapOf(
     "*" to Operator(2, true),
     "/" to Operator(2, true)
 )
+
+
+fun check_string_isnt_any_of_empty_or_not_number_or_zero(string: String): Boolean {
+    if (string.isEmpty())
+    {
+        Log.d("empty","true")
+        return false
+    }
+
+    if (!string.replace(".","").isDigitsOnly())
+    {
+        Log.d("Nan","true")
+        return false
+    }
+
+    if (string.toDouble() == 0.0)
+    {
+        Log.d("zero","true")
+        return false
+    }
+
+    return true
+}
+
+
+fun bool_to_int(bool: Boolean): Int {
+    if (bool)
+    {
+        return 1
+    }
+    else{
+        return 0
+    }
+}
+
 
 // Convert list of tokens to RPN using the shunting-yard algorithm
 fun shuntingYard(tokens: List<Token>): List<Token> {
