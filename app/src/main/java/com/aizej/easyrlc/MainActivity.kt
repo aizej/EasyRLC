@@ -49,6 +49,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.IntOffset
@@ -67,6 +68,7 @@ import com.patrykandpatrick.vico.core.cartesian.axis.HorizontalAxis
 import com.patrykandpatrick.vico.core.cartesian.axis.VerticalAxis
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModel
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
+import com.patrykandpatrick.vico.core.cartesian.data.CartesianLayerRangeProvider
 import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
 import com.tecacet.komplex.Complex
 import kotlin.math.PI
@@ -1459,17 +1461,17 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        val fixedStepSize = (points[graph_lenght-1].x-points[0].x)/(graph_lenght-1).toDouble()
+        val fixedStepSize = ((points[graph_lenght-1].x-points[0].x)/(graph_lenght-1)).toDouble()
 
         val fixedGetXStep: (CartesianChartModel) -> Double = { _ ->
             fixedStepSize
         }
 
-
+        val screenWidthDpValue = LocalConfiguration.current.screenWidthDp // this is Int
 
         CartesianChartHost(
             chart = rememberCartesianChart(
-                rememberLineCartesianLayer(),
+                rememberLineCartesianLayer(pointSpacing = (screenWidthDpValue/graph_lenght).toInt().dp),
                 startAxis = VerticalAxis.rememberStart(label =  rememberAxisLabelComponent(color = Color.Black)),  // Y axis
                 bottomAxis = HorizontalAxis.rememberBottom(label =  rememberAxisLabelComponent(color = Color.Black)), // X axis
                 getXStep = fixedGetXStep
