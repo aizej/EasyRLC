@@ -432,9 +432,12 @@ class MainActivity : ComponentActivity() {
 
                                                     if (solved_components.size != 2){
                                                         simplyfy(solved_components)
+                                                        var the_component: String = ""
+                                                        solved_components.entries.forEach { (key, _) -> the_component = key }
 
-
-                                                        if (total_equation.value != "0" && solved_components.size == 1)
+                                                        if (total_equation.value != "0" && solved_components.size == 1
+                                                            && (solved_components[the_component]!!.input.contains("M") || solved_components[the_component]!!.output.contains("M"))
+                                                            && (solved_components[the_component]!!.input.contains("P") || solved_components[the_component]!!.output.contains("P")))
                                                         {
                                                             solved_components.entries.forEach { (key, _) -> total_equation.value = solved_components[key]!!.equation } // there should be only one component
 
