@@ -120,7 +120,7 @@ class MainActivity : ComponentActivity() {
     val RLC_graph_from_to = 80.0
     val RL_RC_graph_from = 10.0
     val RL_RC_graph_to = 80.0
-    val precision_steps = 50
+    val precision_steps = 30
 
 
 
@@ -363,8 +363,9 @@ class MainActivity : ComponentActivity() {
                                                 fr.value = result.first
                                                 fr_precision_error.value = result.second
 
-
-                                                abs_at_fr.value = amp_phase_from_complex(calculate_value(total_equation.value,fr.value)).first
+                                                //cant evaluate exactly at fr because there are issues with division with 0
+                                                abs_at_fr.value = (amp_phase_from_complex(calculate_value(total_equation.value,fr.value+fr_precision_error.value)).first+
+                                                        amp_phase_from_complex(calculate_value(total_equation.value,fr.value-fr_precision_error.value)).first)/2
 
 
                                                 result = find_phase(total_equation.value,graph_from.value,graph_to.value, precision_steps, 45.0)
@@ -389,6 +390,10 @@ class MainActivity : ComponentActivity() {
 
                                                 B.value = fmh.value - fmd.value
                                                 Q.value = fr.value/B.value
+                                            }
+                                            else
+                                            {
+                                                Toast.makeText(context, "Cannot find fr", Toast.LENGTH_LONG).show()
                                             }
 
                                             show_stats.value = !show_stats.value
@@ -1675,19 +1680,19 @@ val operators = mapOf(
 fun check_string_isnt_any_of_empty_or_not_number_or_zero(string: String): Boolean {
     if (string.isEmpty())
     {
-        Log.d("empty","true")
+
         return false
     }
 
     if (!string.replace(".","").isDigitsOnly())
     {
-        Log.d("Nan","true")
+
         return false
     }
 
     if (string.toDouble() == 0.0)
     {
-        Log.d("zero","true")
+
         return false
     }
 
@@ -1766,6 +1771,7 @@ fun evaluateRPN(rpn: List<Token>, xValue: Double): Complex {
                 }
                 val b = stack.removeAt(stack.lastIndex)
                 val a = stack.removeAt(stack.lastIndex)
+
                 val res = when (token.value) {
                     "+" -> a + b
                     "-" -> a - b
