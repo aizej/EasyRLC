@@ -297,21 +297,6 @@ class MainActivity : ComponentActivity() {
                                         onClick = {add_wire_to_components(components)}) {
                                         Text("WIRE", color = Color.Black)
                                     }
-                                    /*
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .clip(RoundedCornerShape(16.dp))
-                                            .background(Color.LightGray),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = "\uD83D\uDDD1",
-                                            fontSize = 60.sp // Adjust this value as needed
-                                        )
-                                    }
-
-                                     */
                                 }
                             }
                         }
@@ -403,6 +388,22 @@ class MainActivity : ComponentActivity() {
                                     }
                                 }
 
+                                if(current_window_shown.value == "circuit" || current_window_shown.value == "help")
+                                {
+                                    Button(colors = Buttoncolors,
+                                        onClick = {
+                                            if(current_window_shown.value == "circuit")
+                                            {
+                                                current_window_shown.value = "help"
+                                            }
+                                            else
+                                            {
+                                                current_window_shown.value = "circuit"
+                                            }
+                                        }) {
+                                        Text("HELP", color = Color.Black)
+                                    }
+                                }
 
 
                                 if(current_window_shown.value == "circuit" || current_window_shown.value == "calculator")
@@ -480,9 +481,20 @@ class MainActivity : ComponentActivity() {
                                                         }
                                                         else
                                                         {
-                                                            Log.d("test","${total_equation.value}")
-                                                            Log.d("test","${solved_components.size}")
-                                                            Toast.makeText(context, "Cant yet simplify this circuit :(", Toast.LENGTH_LONG).show()
+                                                            //Log.d("test","${total_equation.value}")
+                                                            //Log.d("test","${solved_components.size}")
+                                                            if (solved_components.isEmpty())
+                                                            {
+                                                                Toast.makeText(context, "The components need to be connected to RED and BLUE!", Toast.LENGTH_LONG).show()
+                                                            }
+                                                            else if (solved_components.size == 1)
+                                                            {
+                                                                Toast.makeText(context, "An Error occurred :(", Toast.LENGTH_LONG).show()
+                                                            }
+                                                            else
+                                                            {
+                                                                Toast.makeText(context, "Cant yet solve this circuit :(", Toast.LENGTH_LONG).show()
+                                                            }
                                                         }
                                                     }
                                                     else{
@@ -773,6 +785,15 @@ class MainActivity : ComponentActivity() {
                             {
                                 Text("=", color = Color.Black)
                             }
+                        }
+                    }
+
+                    if (current_window_shown.value == "help")
+                    {
+                        Column {
+                            Spacer(Modifier.height(50.dp))
+                            Text("Here are some useful tips:")
+                            Text("-To delete a component drag it to the left side of the screen.\n-The first graph is the absolute value of impedance while the second is its phase.\n-The calculator screen needs 2 values. The last one will be calculated")
                         }
                     }
                 }
