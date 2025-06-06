@@ -76,8 +76,11 @@ import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
 import com.patrykandpatrick.vico.core.common.Legend
 import com.tecacet.komplex.Complex
 import kotlin.math.PI
+import kotlin.math.abs
 import kotlin.math.atan
 import kotlin.math.atan2
+import kotlin.math.ceil
+import kotlin.math.log10
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.pow
@@ -117,7 +120,7 @@ class MainActivity : ComponentActivity() {
     }
 
     val point_size = 40
-    val round_to_decilal_places = 4
+    val round_to_decilal_places = 6
     val graph_lenght = 50
     val graph_absolute_start_at = 0.01
     val graph_absolute_end_at  = 1000000000.0
@@ -125,6 +128,7 @@ class MainActivity : ComponentActivity() {
     val RL_RC_graph_from = 10.0
     val RL_RC_graph_to = 80.0
     val precision_steps = 30
+
 
 
 
@@ -537,12 +541,12 @@ class MainActivity : ComponentActivity() {
                                         {
                                             SelectableText("Equation: ${total_equation.value.replace("x","f")}")
                                         }
-                                        SelectableText("Resonation frequency (fr): ${fr.value} (+-${fr_precision_error.value})")
-                                        SelectableText("Impedance on fr: ${abs_at_fr.value}")
-                                        SelectableText("fmd: ${fmd.value}")
-                                        SelectableText("fmh: ${fmh.value}")
-                                        SelectableText("B: ${B.value}")
-                                        SelectableText("Q: ${Q.value}")
+                                        SelectableText("Resonation frequency (fr): ${roundToNSignificantDigits(fr.value,round_to_decilal_places)} (+-${roundToNSignificantDigits(fr_precision_error.value,round_to_decilal_places)})")
+                                        SelectableText("Impedance on fr: ${roundToNSignificantDigits(abs_at_fr.value,round_to_decilal_places)}")
+                                        SelectableText("fmd: ${roundToNSignificantDigits(fmd.value,round_to_decilal_places)}")
+                                        SelectableText("fmh: ${roundToNSignificantDigits(fmh.value,round_to_decilal_places)}")
+                                        SelectableText("B: ${roundToNSignificantDigits(B.value,round_to_decilal_places)}")
+                                        SelectableText("Q: ${roundToNSignificantDigits(Q.value,round_to_decilal_places)}")
 
                                     }
                                 }
@@ -1925,6 +1929,15 @@ fun String_number_to_prefix(number: String): String {
     return number.toString()
 }
 
+fun roundToNSignificantDigits(number: Double, n: Int): Double {
+    if (number == 0.0) return 0.0
+    if (n <= 0) throw IllegalArgumentException("Number of significant digits must be positive")
+
+    val d = ceil(log10(abs(number)))
+    val power = n - d.toInt()
+    val magnitude = 10.0.pow(power)
+    return round(number * magnitude, places = 0) / magnitude
+}
 
 fun distance(point1: Position, point2: Position): Float
 {
