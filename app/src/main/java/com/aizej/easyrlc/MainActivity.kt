@@ -616,9 +616,9 @@ class MainActivity : ComponentActivity() {
                                                 // round if too big
                                                 if (Z_amount.value > 0.01)
                                                 {
-                                                    Z_amount.value = round(Z_amount.value, round_to_decilal_places)
-                                                    Z_real.value = round(result_from_eqact_calc.value.real, round_to_decilal_places)
-                                                    Z_imaginary.value = round(result_from_eqact_calc.value.img, round_to_decilal_places)
+                                                    Z_amount.value = roundToNSignificantDigits(Z_amount.value, round_to_decilal_places)
+                                                    Z_real.value = roundToNSignificantDigits(result_from_eqact_calc.value.real, round_to_decilal_places)
+                                                    Z_imaginary.value = roundToNSignificantDigits(result_from_eqact_calc.value.img, round_to_decilal_places)
                                                 }
                                                 else
                                                 {
@@ -647,7 +647,7 @@ class MainActivity : ComponentActivity() {
                                                     }
                                                 }
 
-                                                Z_phase.value = round(Z_phase.value,round_to_decilal_places)
+                                                Z_phase.value = roundToNSignificantDigits(Z_phase.value,round_to_decilal_places)
                                             }
                                                          },
                                             modifier = Modifier
