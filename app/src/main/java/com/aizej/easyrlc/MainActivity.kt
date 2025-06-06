@@ -1,6 +1,7 @@
 package com.aizej.easyrlc
 
 import android.content.res.Resources
+import android.graphics.Typeface
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -54,6 +55,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.text.isDigitsOnly
 import com.aizej.easyrlc.MainActivity.Position
 import com.jetpack.multipledraggable.MultipleDraggableTheme
@@ -64,12 +66,14 @@ import com.patrykandpatrick.vico.compose.cartesian.axis.rememberBottom
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberStart
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLineCartesianLayer
 import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
+import com.patrykandpatrick.vico.compose.common.component.rememberTextComponent
 import com.patrykandpatrick.vico.core.cartesian.axis.HorizontalAxis
 import com.patrykandpatrick.vico.core.cartesian.axis.VerticalAxis
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModel
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianLayerRangeProvider
 import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
+import com.patrykandpatrick.vico.core.common.Legend
 import com.tecacet.komplex.Complex
 import kotlin.math.PI
 import kotlin.math.atan
@@ -656,8 +660,8 @@ class MainActivity : ComponentActivity() {
                                             Text("(${Z_real.value}, i${Z_imaginary.value})", color = Color.Black)
                                         }
                                     }
-                                    MyChart(abs_graph_data.value)
-                                    MyChart(phase_graph_data.value)
+                                    MyChart(abs_graph_data.value, title_x = "Frequency [Hz]", title_y = "Impedance [Ω]", graph_name = "Impedance")
+                                    MyChart(phase_graph_data.value, title_x = "Frequency [Hz]",title_y = "Phase [°]", graph_name = "Phase")
                                 }
 
                             }
@@ -793,7 +797,7 @@ class MainActivity : ComponentActivity() {
                         Column {
                             Spacer(Modifier.height(50.dp))
                             Text("Here are some useful tips:")
-                            Text("-To delete a component drag it to the left side of the screen.\n-The first graph is the absolute value of impedance while the second is its phase.\n-The calculator screen needs 2 values. The last one will be calculated")
+                            Text("-To delete a component drag it to the left side of the screen.\n-You can zoom in to the graph for more precise reading.\n-The calculator screen needs 2 values. The last one will be calculated")
                         }
                     }
                 }
@@ -988,14 +992,13 @@ class MainActivity : ComponentActivity() {
         val length = sqrt( (x2 - x1)*(x2 - x1)+(y2 - y1)*(y2 - y1))
 
         val angle = atan2(y2 - y1, x2 - x1) * (180f / PI).toFloat()
-        var centerX = (x1 + x2) / 2
-        var centerY = (y1 + y2) / 2
-        var size_width = length/2
-        var size_height = length/2
-        centerX -= size_width/0.8.toFloat()
-        centerY -= size_height/0.8.toFloat()
-        size_width = size_width/1.2.toFloat()
-        size_height = size_height/1.2.toFloat()
+        var size_width = (length/2 - point_size/2)*0.72 + 10
+        var size_height = (length/2 - point_size/2)*0.72 + 10
+
+        var centerX = (x1 + x2) / 2 - size_width*1.35 + 5
+        var centerY = (y1 + y2) / 2 - size_height*1.35 + 5
+
+
 
         var image_name  = components[componenta_name]!!.image
 
@@ -1017,7 +1020,7 @@ class MainActivity : ComponentActivity() {
             Column{
                 if(componenta_name.first() != 'W'){
                     Text(componenta_name, color = Color.Black)
-                    Text(components[componenta_name]!!.value, color = Color.Black)
+                    Text(String_number_to_prefix(components[componenta_name]!!.value), color = Color.Black)
                 }
             }
         }
@@ -1473,7 +1476,7 @@ class MainActivity : ComponentActivity() {
 
 
     @Composable
-    fun MyChart(points: List<Point>, modifier: Modifier = Modifier) {
+    fun MyChart(points: List<Point>, modifier: Modifier = Modifier,title_x: String,title_y: String,graph_name: String) {
         val modelProducer = remember { CartesianChartModelProducer() }
 
         val sortedPoints = points.sortedBy { it.x }
@@ -1487,6 +1490,13 @@ class MainActivity : ComponentActivity() {
             }
         }
 
+        val axisTitleComponent = rememberTextComponent(
+            color = Color.Black,
+            textSize = 11.sp,
+            typeface = Typeface.DEFAULT_BOLD
+        )
+
+
         val fixedStepSize = ((points[graph_lenght-1].x-points[0].x)/(graph_lenght-1)).toDouble()
 
         val fixedGetXStep: (CartesianChartModel) -> Double = { _ ->
@@ -1495,16 +1505,35 @@ class MainActivity : ComponentActivity() {
 
         val screenWidthDpValue = LocalConfiguration.current.screenWidthDp // this is Int
 
-        CartesianChartHost(
-            chart = rememberCartesianChart(
-                rememberLineCartesianLayer(pointSpacing = (screenWidthDpValue/graph_lenght).toInt().dp),
-                startAxis = VerticalAxis.rememberStart(label =  rememberAxisLabelComponent(color = Color.Black)),  // Y axis
-                bottomAxis = HorizontalAxis.rememberBottom(label =  rememberAxisLabelComponent(color = Color.Black)), // X axis
-                getXStep = fixedGetXStep
-            ),
-            modelProducer = modelProducer,
-            modifier = modifier
-        )
+        Column(modifier = modifier) {
+            Text(
+                text = graph_name, // Chart title
+                style = MaterialTheme.typography.h6,
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(top = 20.dp)
+            )
+
+            CartesianChartHost(
+                chart = rememberCartesianChart(
+                    rememberLineCartesianLayer(pointSpacing = (screenWidthDpValue / graph_lenght).toInt().dp),
+                    startAxis = VerticalAxis.rememberStart(
+                        label = rememberAxisLabelComponent(color = Color.Black),
+                        title = title_y,
+                        titleComponent = axisTitleComponent
+                    ),  // Y axis
+                    bottomAxis = HorizontalAxis.rememberBottom(
+                        label = rememberAxisLabelComponent(
+                            color = Color.Black
+                        ), title = title_x,
+                        titleComponent = axisTitleComponent
+                    ), // X axis
+                    getXStep = fixedGetXStep,
+                ),
+                modelProducer = modelProducer,
+                modifier = modifier
+            )
+        }
     }
 
 
@@ -1863,6 +1892,39 @@ fun getScreenWidth(): Int {
 fun getScreenHeight(): Int {
     return Resources.getSystem().getDisplayMetrics().heightPixels
 }
+
+
+fun String_number_to_prefix(number: String): String {
+    var number = number.toDouble()
+    if (number < 0.000000001)
+        {
+            return (number*1000000000000).toString() + "n"
+        }
+    if (number < 0.000001)
+    {
+        return (number*1000000000).toString() + "p"
+    }
+    if (number < 0.001)
+    {
+        return (number*1000000).toString() + "µ"
+    }
+    if (number < 1)
+    {
+        return (number*1000).toString() + "m"
+    }
+
+    if (number > 1000000)
+    {
+        return (number*0.000001).toString() + "M"
+    }
+    if (number > 1000)
+    {
+        return (number*0.001).toString() + "k"
+    }
+
+    return number.toString()
+}
+
 
 fun distance(point1: Position, point2: Position): Float
 {
