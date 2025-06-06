@@ -1019,8 +1019,8 @@ class MainActivity : ComponentActivity() {
             )
             Column{
                 if(componenta_name.first() != 'W'){
-                    Text(componenta_name, color = Color.Black)
-                    Text(String_number_to_prefix(components[componenta_name]!!.value), color = Color.Black)
+                    Text(modifier = Modifier.offset{IntOffset(100, -110+size_width.toInt())} ,text = componenta_name, color = Color.Black)
+                    Text(modifier = Modifier.offset{IntOffset(100, -110+size_width.toInt())} ,text = String_number_to_prefix(components[componenta_name]!!.value), color = Color.Black)
                 }
             }
         }
