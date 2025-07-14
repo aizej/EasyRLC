@@ -1,6 +1,7 @@
 package com.aizej.easyrlc
 
 import android.content.res.Resources
+import android.graphics.Typeface
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -49,10 +50,12 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.text.isDigitsOnly
 import com.aizej.easyrlc.MainActivity.Position
 import com.jetpack.multipledraggable.MultipleDraggableTheme
@@ -63,15 +66,21 @@ import com.patrykandpatrick.vico.compose.cartesian.axis.rememberBottom
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberStart
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLineCartesianLayer
 import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
+import com.patrykandpatrick.vico.compose.common.component.rememberTextComponent
 import com.patrykandpatrick.vico.core.cartesian.axis.HorizontalAxis
 import com.patrykandpatrick.vico.core.cartesian.axis.VerticalAxis
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModel
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
+import com.patrykandpatrick.vico.core.cartesian.data.CartesianLayerRangeProvider
 import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
+import com.patrykandpatrick.vico.core.common.Legend
 import com.tecacet.komplex.Complex
 import kotlin.math.PI
+import kotlin.math.abs
 import kotlin.math.atan
 import kotlin.math.atan2
+import kotlin.math.ceil
+import kotlin.math.log10
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.pow
@@ -111,14 +120,15 @@ class MainActivity : ComponentActivity() {
     }
 
     val point_size = 40
-    val round_to_decilal_places = 4
+    val round_to_decilal_places = 6
     val graph_lenght = 50
     val graph_absolute_start_at = 0.01
     val graph_absolute_end_at  = 1000000000.0
     val RLC_graph_from_to = 80.0
     val RL_RC_graph_from = 10.0
     val RL_RC_graph_to = 80.0
-    val precision_steps = 50
+    val precision_steps = 30
+
 
 
 
@@ -154,6 +164,9 @@ class MainActivity : ComponentActivity() {
                     var phase_graph_data = remember { mutableStateOf(listOf<Point>()) }
                     var graph_from = remember { mutableStateOf(graph_absolute_start_at) }
                     var graph_to = remember { mutableStateOf(graph_absolute_end_at) }
+                    val Calculator_L = remember { mutableStateOf("") }
+                    val Calculator_C = remember { mutableStateOf("") }
+                    val Calculator_F = remember { mutableStateOf("") }
                     
                     val context = LocalContext.current
 
@@ -292,21 +305,6 @@ class MainActivity : ComponentActivity() {
                                         onClick = {add_wire_to_components(components)}) {
                                         Text("WIRE", color = Color.Black)
                                     }
-                                    /*
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .clip(RoundedCornerShape(16.dp))
-                                            .background(Color.LightGray),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = "\uD83D\uDDD1",
-                                            fontSize = 60.sp // Adjust this value as needed
-                                        )
-                                    }
-
-                                     */
                                 }
                             }
                         }
@@ -337,7 +335,7 @@ class MainActivity : ComponentActivity() {
                                 .fillMaxWidth()
                                 .height(60.dp),
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.End
+                                horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.End)
                             ){
                                 if(current_window_shown.value == "graph")
                                 {
@@ -358,8 +356,9 @@ class MainActivity : ComponentActivity() {
                                                 fr.value = result.first
                                                 fr_precision_error.value = result.second
 
-
-                                                abs_at_fr.value = amp_phase_from_complex(calculate_value(total_equation.value,fr.value)).first
+                                                //cant evaluate exactly at fr because there are issues with division with 0
+                                                abs_at_fr.value = (amp_phase_from_complex(calculate_value(total_equation.value,fr.value+fr_precision_error.value)).first+
+                                                        amp_phase_from_complex(calculate_value(total_equation.value,fr.value-fr_precision_error.value)).first)/2
 
 
                                                 result = find_phase(total_equation.value,graph_from.value,graph_to.value, precision_steps, 45.0)
@@ -385,6 +384,10 @@ class MainActivity : ComponentActivity() {
                                                 B.value = fmh.value - fmd.value
                                                 Q.value = fr.value/B.value
                                             }
+                                            else
+                                            {
+                                                Toast.makeText(context, "Cannot find fr", Toast.LENGTH_LONG).show()
+                                            }
 
                                             show_stats.value = !show_stats.value
                                         })
@@ -393,78 +396,130 @@ class MainActivity : ComponentActivity() {
                                     }
                                 }
 
+                                if(current_window_shown.value == "circuit" || current_window_shown.value == "help")
+                                {
+                                    Button(colors = Buttoncolors,
+                                        onClick = {
+                                            if(current_window_shown.value == "circuit")
+                                            {
+                                                current_window_shown.value = "help"
+                                            }
+                                            else
+                                            {
+                                                current_window_shown.value = "circuit"
+                                            }
+                                        }) {
+                                        Text("HELP", color = Color.Black)
+                                    }
+                                }
 
-                                Button(colors = Buttoncolors,
-                                    onClick =
-                                    {
-                                        if(current_window_shown.value != "graph")
-                                        {
-                                            show_stats.value = false
-                                            graph_from.value = graph_absolute_start_at
-                                            graph_to.value = graph_absolute_end_at
+
+                                if(current_window_shown.value == "circuit" || current_window_shown.value == "calculator")
+                                {
+                                    Button(colors = Buttoncolors,
+                                        onClick = {
+                                            if(current_window_shown.value == "circuit")
+                                            {
+                                                current_window_shown.value = "calculator"
+                                            }
+                                            else
+                                            {
+                                                current_window_shown.value = "circuit"
+                                            }
+                                        }) {
+                                        Text("CALCULATOR", color = Color.Black)
+                                    }
+                                }
 
 
-                                            var solved_components = components.mapValues { it.value.deepCopy() }.toMutableMap()
-
-                                            if (solved_components.size != 2){
-                                                simplyfy(solved_components)
-
-
-                                                if (total_equation.value != "0" && solved_components.size == 1)
+                                if(current_window_shown.value == "circuit" || current_window_shown.value == "graph")
+                                {
+                                    Button(colors = Buttoncolors,
+                                        onClick =
+                                            {
+                                                if(current_window_shown.value != "graph")
                                                 {
-                                                    solved_components.entries.forEach { (key, _) -> total_equation.value = solved_components[key]!!.equation } // there should be only one component
+                                                    show_stats.value = false
+                                                    graph_from.value = graph_absolute_start_at
+                                                    graph_to.value = graph_absolute_end_at
 
-                                                    var data = getvalues_for_initial_graph(total_equation.value, graph_from.value,graph_to.value)
-                                                    abs_graph_data.value = data.first
-                                                    phase_graph_data.value = data.second
-                                                    //Log.d("autorange_posible","${phase_graph_data.value[0].y != phase_graph_data.value[graph_lenght-1].y}")
-                                                    if (phase_graph_data.value[0].y != phase_graph_data.value[graph_lenght-1].y)  // cant estimate graph for just L C
-                                                    {
-                                                        val newrange = get_range_automaticaly(phase_graph_data.value,total_equation.value)
-                                                        Log.d("autorange:","${newrange}")
-                                                        if (newrange.first != (-1).toFloat())
+
+                                                    var solved_components = components.mapValues { it.value.deepCopy() }.toMutableMap()
+
+                                                    if (solved_components.size != 2){
+                                                        simplyfy(solved_components)
+                                                        var the_component: String = ""
+                                                        solved_components.entries.forEach { (key, _) -> the_component = key }
+
+                                                        if (total_equation.value != "0" && solved_components.size == 1
+                                                            && (solved_components[the_component]!!.input.contains("M") || solved_components[the_component]!!.output.contains("M"))
+                                                            && (solved_components[the_component]!!.input.contains("P") || solved_components[the_component]!!.output.contains("P")))
                                                         {
-                                                            if (newrange.first == newrange.second)
+                                                            solved_components.entries.forEach { (key, _) -> total_equation.value = solved_components[key]!!.equation } // there should be only one component
+
+                                                            var data = getvalues_for_initial_graph(total_equation.value, graph_from.value,graph_to.value)
+                                                            abs_graph_data.value = data.first
+                                                            phase_graph_data.value = data.second
+                                                            //Log.d("autorange_posible","${phase_graph_data.value[0].y != phase_graph_data.value[graph_lenght-1].y}")
+                                                            if (phase_graph_data.value[0].y != phase_graph_data.value[graph_lenght-1].y)  // cant estimate graph for just L C
                                                             {
-                                                                graph_from.value = (newrange.first*0.9).toDouble()
-                                                                graph_to.value = (newrange.second*1.1).toDouble()
+                                                                val newrange = get_range_automaticaly(phase_graph_data.value,total_equation.value)
+                                                                Log.d("autorange:","${newrange}")
+                                                                if (newrange.first != (-1).toFloat())
+                                                                {
+                                                                    if (newrange.first == newrange.second)
+                                                                    {
+                                                                        graph_from.value = (newrange.first*0.9).toDouble()
+                                                                        graph_to.value = (newrange.second*1.1).toDouble()
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        graph_from.value = newrange.first.toDouble()
+                                                                        graph_to.value = newrange.second.toDouble()
+                                                                    }
+                                                                }
+
+                                                                data = getvalues_for_initial_graph(total_equation.value, graph_from.value,graph_to.value)
+                                                                abs_graph_data.value = data.first
+                                                                phase_graph_data.value = data.second
+                                                            }
+
+
+                                                            current_window_shown.value = "graph"
+                                                        }
+                                                        else
+                                                        {
+                                                            //Log.d("test","${total_equation.value}")
+                                                            //Log.d("test","${solved_components.size}")
+                                                            if (solved_components.isEmpty())
+                                                            {
+                                                                Toast.makeText(context, "The components need to be connected to RED and BLUE!", Toast.LENGTH_LONG).show()
+                                                            }
+                                                            else if (solved_components.size == 1)
+                                                            {
+                                                                Toast.makeText(context, "An Error occurred :(", Toast.LENGTH_LONG).show()
                                                             }
                                                             else
                                                             {
-                                                                graph_from.value = newrange.first.toDouble()
-                                                                graph_to.value = newrange.second.toDouble()
+                                                                Toast.makeText(context, "Cant yet solve this circuit :(", Toast.LENGTH_LONG).show()
                                                             }
                                                         }
-
-                                                        data = getvalues_for_initial_graph(total_equation.value, graph_from.value,graph_to.value)
-                                                        abs_graph_data.value = data.first
-                                                        phase_graph_data.value = data.second
                                                     }
-
-
-                                                    current_window_shown.value = "graph"
+                                                    else{
+                                                        if (current_window_shown.value == "circuit")
+                                                        {
+                                                            Toast.makeText(context, "Add or connect components to BLUE and RED", Toast.LENGTH_LONG).show()
+                                                        }
+                                                    }
                                                 }
                                                 else
                                                 {
-                                                    Log.d("test","${total_equation.value}")
-                                                    Log.d("test","${solved_components.size}")
-                                                    Toast.makeText(context, "Cant yet simplify this circuit :(", Toast.LENGTH_LONG).show()
+                                                    current_window_shown.value = "circuit"
                                                 }
-                                            }
-                                            else{
-                                                if (current_window_shown.value == "circuit")
-                                                {
-                                                    Toast.makeText(context, "Add or connect components to BLUE and RED", Toast.LENGTH_LONG).show()
-                                                }
-                                            }
-                                        }
-                                        else
-                                        {
-                                            current_window_shown.value = "circuit"
-                                        }
-                                    })
-                                {
-                                    Text("GRAPH", color = Color.Black)
+                                            })
+                                    {
+                                        Text("GRAPH", color = Color.Black)
+                                    }
                                 }
                             }
 
@@ -486,12 +541,12 @@ class MainActivity : ComponentActivity() {
                                         {
                                             SelectableText("Equation: ${total_equation.value.replace("x","f")}")
                                         }
-                                        SelectableText("Resonation frequency (fr): ${fr.value} (+-${fr_precision_error.value})")
-                                        SelectableText("Impedance on fr: ${abs_at_fr.value}")
-                                        SelectableText("fmd: ${fmd.value}")
-                                        SelectableText("fmh: ${fmh.value}")
-                                        SelectableText("B: ${B.value}")
-                                        SelectableText("Q: ${Q.value}")
+                                        SelectableText("Resonation frequency (fr): ${roundToNSignificantDigits(fr.value,round_to_decilal_places)} (+-${roundToNSignificantDigits(fr_precision_error.value,round_to_decilal_places)})")
+                                        SelectableText("Impedance on fr: ${roundToNSignificantDigits(abs_at_fr.value,round_to_decilal_places)}")
+                                        SelectableText("fmd: ${roundToNSignificantDigits(fmd.value,round_to_decilal_places)}")
+                                        SelectableText("fmh: ${roundToNSignificantDigits(fmh.value,round_to_decilal_places)}")
+                                        SelectableText("B: ${roundToNSignificantDigits(B.value,round_to_decilal_places)}")
+                                        SelectableText("Q: ${roundToNSignificantDigits(Q.value,round_to_decilal_places)}")
 
                                     }
                                 }
@@ -561,9 +616,9 @@ class MainActivity : ComponentActivity() {
                                                 // round if too big
                                                 if (Z_amount.value > 0.01)
                                                 {
-                                                    Z_amount.value = round(Z_amount.value, round_to_decilal_places)
-                                                    Z_real.value = round(result_from_eqact_calc.value.real, round_to_decilal_places)
-                                                    Z_imaginary.value = round(result_from_eqact_calc.value.img, round_to_decilal_places)
+                                                    Z_amount.value = roundToNSignificantDigits(Z_amount.value, round_to_decilal_places)
+                                                    Z_real.value = roundToNSignificantDigits(result_from_eqact_calc.value.real, round_to_decilal_places)
+                                                    Z_imaginary.value = roundToNSignificantDigits(result_from_eqact_calc.value.img, round_to_decilal_places)
                                                 }
                                                 else
                                                 {
@@ -592,7 +647,7 @@ class MainActivity : ComponentActivity() {
                                                     }
                                                 }
 
-                                                Z_phase.value = round(Z_phase.value,round_to_decilal_places)
+                                                Z_phase.value = roundToNSignificantDigits(Z_phase.value,round_to_decilal_places)
                                             }
                                                          },
                                             modifier = Modifier
@@ -609,8 +664,8 @@ class MainActivity : ComponentActivity() {
                                             Text("(${Z_real.value}, i${Z_imaginary.value})", color = Color.Black)
                                         }
                                     }
-                                    MyChart(abs_graph_data.value)
-                                    MyChart(phase_graph_data.value)
+                                    MyChart(abs_graph_data.value, title_x = "Frequency [Hz]", title_y = "Impedance [Ω]", graph_name = "Impedance")
+                                    MyChart(phase_graph_data.value, title_x = "Frequency [Hz]",title_y = "Phase [°]", graph_name = "Phase")
                                 }
 
                             }
@@ -655,6 +710,99 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                         Connect_near_components(components = components)
+                    }
+
+
+                    if (current_window_shown.value == "calculator")
+                    {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(20.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ){
+                            Spacer(Modifier.height(50.dp))
+                            Row (){
+
+                                Column (modifier = Modifier
+                                    .padding(5.dp),
+                                    verticalArrangement = Arrangement.spacedBy(40.dp)){
+                                    Text("Inductance:", color = MaterialTheme.colors.onBackground)
+                                    Text("Capacitance:", color = MaterialTheme.colors.onBackground)
+                                    Text("Resonation\n Frequency:", color = MaterialTheme.colors.onBackground)
+                                }
+                                Column {
+                                    OutlinedTextField(
+                                        colors = textFieldColors,
+                                        value = Calculator_L.value,
+                                        onValueChange = { if (it.replace(".","").replace("E","").replace("-","").replace("+","").isDigitsOnly()) Calculator_L.value = it },
+                                        label = { Text("H", color = MaterialTheme.colors.onBackground) }
+                                    )
+                                    OutlinedTextField(
+                                        colors = textFieldColors,
+                                        value = Calculator_C.value,
+                                        onValueChange = { if (it.replace(".","").replace("E","").replace("-","").replace("+","").isDigitsOnly()) Calculator_C.value = it },
+                                        label = { Text("F", color = MaterialTheme.colors.onBackground) }
+                                    )
+                                    OutlinedTextField(
+                                        colors = textFieldColors,
+                                        value = Calculator_F.value,
+                                        onValueChange = { if (it.replace(".","").replace("E","").replace("-","").replace("+","").isDigitsOnly()) Calculator_F.value = it },
+                                        label = { Text("Hz", color = MaterialTheme.colors.onBackground) }
+                                    )
+                                }
+
+
+                            }
+
+                            Button(colors = Buttoncolors,
+                                onClick = {
+
+                                    if (bool_to_int(check_string_isnt_any_of_empty_or_not_number_or_zero(Calculator_L.value))
+                                        +bool_to_int(check_string_isnt_any_of_empty_or_not_number_or_zero(Calculator_C.value))
+                                        +bool_to_int(check_string_isnt_any_of_empty_or_not_number_or_zero(Calculator_F.value)) >= 2)
+                                    {
+                                        if (check_string_isnt_any_of_empty_or_not_number_or_zero(Calculator_L.value))
+                                        {
+                                            if (check_string_isnt_any_of_empty_or_not_number_or_zero(Calculator_C.value))
+                                            {
+                                                Calculator_F.value = (1/(2*PI*sqrt(Calculator_L.value.toDouble()*Calculator_C.value.toDouble()))).toString()
+                                            }
+                                            else
+                                            {
+                                                Calculator_C.value = (1/(4*PI.pow(2)*Calculator_L.value.toDouble()*Calculator_F.value.toDouble().pow(2))).toString()
+                                            }
+                                        }
+                                        else
+                                        {
+                                            if (check_string_isnt_any_of_empty_or_not_number_or_zero(Calculator_C.value))
+                                            {
+                                                if (check_string_isnt_any_of_empty_or_not_number_or_zero(Calculator_F.value))
+                                                {
+                                                    Calculator_L.value = (1/(4*PI.pow(2)*Calculator_C.value.toDouble()*Calculator_F.value.toDouble().pow(2))).toString()
+                                                }
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        Toast.makeText(context, "Chose 2 out of 3 values. The last one will be calculated!", Toast.LENGTH_LONG).show()
+                                    }
+                                })
+                            {
+                                Text("=", color = Color.Black)
+                            }
+                        }
+                    }
+
+                    if (current_window_shown.value == "help")
+                    {
+                        Column {
+                            Spacer(Modifier.height(50.dp))
+                            Text("Here are some useful tips:")
+                            Text("-To delete a component drag it to the left side of the screen.\n-You can zoom in to the graph for more precise reading.\n-The calculator screen needs 2 values. The last one will be calculated")
+                        }
                     }
                 }
             }
@@ -725,7 +873,7 @@ class MainActivity : ComponentActivity() {
     {
         val name = "L$component_num_L"
         components[name] = Component(
-            equation = "i*2*3.14159*x*$value",
+            equation = "i*2*π*x*$value",
             value = value,
             input = mutableListOf<String>(),
             output = mutableListOf<String>(),
@@ -742,7 +890,7 @@ class MainActivity : ComponentActivity() {
     {
         val name = "C$component_num_C"
         components[name] = Component(
-            equation = "1/(i*2*3.14159*x*$value)",
+            equation = "1/(i*2*π*x*$value)",
             value = value,
             input = mutableListOf<String>(),
             output = mutableListOf<String>(),
@@ -848,14 +996,13 @@ class MainActivity : ComponentActivity() {
         val length = sqrt( (x2 - x1)*(x2 - x1)+(y2 - y1)*(y2 - y1))
 
         val angle = atan2(y2 - y1, x2 - x1) * (180f / PI).toFloat()
-        var centerX = (x1 + x2) / 2
-        var centerY = (y1 + y2) / 2
-        var size_width = length/2
-        var size_height = length/2
-        centerX -= size_width/0.8.toFloat()
-        centerY -= size_height/0.8.toFloat()
-        size_width = size_width/1.2.toFloat()
-        size_height = size_height/1.2.toFloat()
+        var size_width = (length/2 - point_size/2)*0.72 + 10
+        var size_height = (length/2 - point_size/2)*0.72 + 10
+
+        var centerX = (x1 + x2) / 2 - size_width*1.35 + 5
+        var centerY = (y1 + y2) / 2 - size_height*1.35 + 5
+
+
 
         var image_name  = components[componenta_name]!!.image
 
@@ -876,8 +1023,8 @@ class MainActivity : ComponentActivity() {
             )
             Column{
                 if(componenta_name.first() != 'W'){
-                    Text(componenta_name, color = Color.Black)
-                    Text(components[componenta_name]!!.value, color = Color.Black)
+                    Text(modifier = Modifier.offset{IntOffset(100, -110+size_width.toInt())} ,text = componenta_name, color = Color.Black)
+                    Text(modifier = Modifier.offset{IntOffset(100, -110+size_width.toInt())} ,text = String_number_to_prefix(components[componenta_name]!!.value), color = Color.Black)
                 }
             }
         }
@@ -1333,7 +1480,7 @@ class MainActivity : ComponentActivity() {
 
 
     @Composable
-    fun MyChart(points: List<Point>, modifier: Modifier = Modifier) {
+    fun MyChart(points: List<Point>, modifier: Modifier = Modifier,title_x: String,title_y: String,graph_name: String) {
         val modelProducer = remember { CartesianChartModelProducer() }
 
         val sortedPoints = points.sortedBy { it.x }
@@ -1347,24 +1494,50 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        val fixedStepSize = (points[graph_lenght-1].x-points[0].x)/(graph_lenght-1).toDouble()
+        val axisTitleComponent = rememberTextComponent(
+            color = Color.Black,
+            textSize = 11.sp,
+            typeface = Typeface.DEFAULT_BOLD
+        )
+
+
+        val fixedStepSize = ((points[graph_lenght-1].x-points[0].x)/(graph_lenght-1)).toDouble()
 
         val fixedGetXStep: (CartesianChartModel) -> Double = { _ ->
             fixedStepSize
         }
 
+        val screenWidthDpValue = LocalConfiguration.current.screenWidthDp // this is Int
 
+        Column(modifier = modifier) {
+            Text(
+                text = graph_name, // Chart title
+                style = MaterialTheme.typography.h6,
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(top = 20.dp)
+            )
 
-        CartesianChartHost(
-            chart = rememberCartesianChart(
-                rememberLineCartesianLayer(),
-                startAxis = VerticalAxis.rememberStart(label =  rememberAxisLabelComponent(color = Color.Black)),  // Y axis
-                bottomAxis = HorizontalAxis.rememberBottom(label =  rememberAxisLabelComponent(color = Color.Black)), // X axis
-                getXStep = fixedGetXStep
-            ),
-            modelProducer = modelProducer,
-            modifier = modifier
-        )
+            CartesianChartHost(
+                chart = rememberCartesianChart(
+                    rememberLineCartesianLayer(pointSpacing = (screenWidthDpValue / graph_lenght).toInt().dp),
+                    startAxis = VerticalAxis.rememberStart(
+                        label = rememberAxisLabelComponent(color = Color.Black),
+                        title = title_y,
+                        titleComponent = axisTitleComponent
+                    ),  // Y axis
+                    bottomAxis = HorizontalAxis.rememberBottom(
+                        label = rememberAxisLabelComponent(
+                            color = Color.Black
+                        ), title = title_x,
+                        titleComponent = axisTitleComponent
+                    ), // X axis
+                    getXStep = fixedGetXStep,
+                ),
+                modelProducer = modelProducer,
+                modifier = modifier
+            )
+        }
     }
 
 
@@ -1557,6 +1730,41 @@ val operators = mapOf(
     "/" to Operator(2, true)
 )
 
+
+fun check_string_isnt_any_of_empty_or_not_number_or_zero(string: String): Boolean {
+    if (string.isEmpty())
+    {
+
+        return false
+    }
+
+    if (!string.replace(".","").isDigitsOnly())
+    {
+
+        return false
+    }
+
+    if (string.toDouble() == 0.0)
+    {
+
+        return false
+    }
+
+    return true
+}
+
+
+fun bool_to_int(bool: Boolean): Int {
+    if (bool)
+    {
+        return 1
+    }
+    else{
+        return 0
+    }
+}
+
+
 // Convert list of tokens to RPN using the shunting-yard algorithm
 fun shuntingYard(tokens: List<Token>): List<Token> {
     val output = mutableListOf<Token>()
@@ -1617,6 +1825,7 @@ fun evaluateRPN(rpn: List<Token>, xValue: Double): Complex {
                 }
                 val b = stack.removeAt(stack.lastIndex)
                 val a = stack.removeAt(stack.lastIndex)
+
                 val res = when (token.value) {
                     "+" -> a + b
                     "-" -> a - b
@@ -1686,6 +1895,48 @@ fun getScreenWidth(): Int {
 
 fun getScreenHeight(): Int {
     return Resources.getSystem().getDisplayMetrics().heightPixels
+}
+
+
+fun String_number_to_prefix(number: String): String {
+    var number = number.toDouble()
+    if (number < 0.000000001)
+        {
+            return (number*1000000000000).toString() + "n"
+        }
+    if (number < 0.000001)
+    {
+        return (number*1000000000).toString() + "p"
+    }
+    if (number < 0.001)
+    {
+        return (number*1000000).toString() + "µ"
+    }
+    if (number < 1)
+    {
+        return (number*1000).toString() + "m"
+    }
+
+    if (number > 1000000)
+    {
+        return (number*0.000001).toString() + "M"
+    }
+    if (number > 1000)
+    {
+        return (number*0.001).toString() + "k"
+    }
+
+    return number.toString()
+}
+
+fun roundToNSignificantDigits(number: Double, n: Int): Double {
+    if (number == 0.0) return 0.0
+    if (n <= 0) throw IllegalArgumentException("Number of significant digits must be positive")
+
+    val d = ceil(log10(abs(number)))
+    val power = n - d.toInt()
+    val magnitude = 10.0.pow(power)
+    return round(number * magnitude, places = 0) / magnitude
 }
 
 fun distance(point1: Position, point2: Position): Float
