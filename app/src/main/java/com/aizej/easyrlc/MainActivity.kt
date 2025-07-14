@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
@@ -53,6 +54,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -223,7 +226,11 @@ class MainActivity : ComponentActivity() {
                                         colors = textFieldColors,
                                         value = R_spawn_text,
                                         onValueChange = { if (it.replace(".","").isDigitsOnly()) R_spawn_text = it },
-                                        label = { Text("Ω", color = MaterialTheme.colors.onBackground) }
+                                        label = { Text("Ω", color = MaterialTheme.colors.onBackground) },
+                                        keyboardOptions = KeyboardOptions(
+                                            keyboardType = KeyboardType.Number, // or Decimal
+                                            imeAction = ImeAction.Done
+                                        )
                                     )
                                 }
 
@@ -256,7 +263,11 @@ class MainActivity : ComponentActivity() {
                                         colors = textFieldColors,
                                         value = L_spawn_text,
                                         onValueChange = { if (it.replace(".","").isDigitsOnly()) L_spawn_text = it },
-                                        label = { Text("H", color = MaterialTheme.colors.onBackground) }
+                                        label = { Text("H", color = MaterialTheme.colors.onBackground) },
+                                        keyboardOptions = KeyboardOptions(
+                                            keyboardType = KeyboardType.Number, // or Decimal
+                                            imeAction = ImeAction.Done
+                                        )
                                     )
                                 }
 
@@ -289,7 +300,11 @@ class MainActivity : ComponentActivity() {
                                         colors = textFieldColors,
                                         value = C_spawn_text,
                                         onValueChange = { if (it.replace(".","").isDigitsOnly()) C_spawn_text = it },
-                                        label = { Text("F", color = MaterialTheme.colors.onBackground) }
+                                        label = { Text("F", color = MaterialTheme.colors.onBackground) },
+                                        keyboardOptions = KeyboardOptions(
+                                            keyboardType = KeyboardType.Number, // or Decimal
+                                            imeAction = ImeAction.Done
+                                        )
                                     )
                                 }
 
@@ -576,7 +591,11 @@ class MainActivity : ComponentActivity() {
                                             .weight(2f),
                                             value = frequency_from.value,
                                             onValueChange = { if (it.replace(".","").isDigitsOnly()) frequency_from.value = it },
-                                            label = { Text("from", color = MaterialTheme.colors.onBackground) }
+                                            label = { Text("from", color = MaterialTheme.colors.onBackground) },
+                                            keyboardOptions = KeyboardOptions(
+                                                keyboardType = KeyboardType.Number, // or Decimal
+                                                imeAction = ImeAction.Done
+                                            )
                                         )
                                         OutlinedTextField(
                                             colors = textFieldColors,
@@ -584,7 +603,11 @@ class MainActivity : ComponentActivity() {
                                             .weight(1.5f),
                                             value = frequency_to.value,
                                             onValueChange = { if (it.replace(".","").isDigitsOnly()) frequency_to.value = it },
-                                            label = { Text("to", color = MaterialTheme.colors.onBackground) }
+                                            label = { Text("to", color = MaterialTheme.colors.onBackground) },
+                                            keyboardOptions = KeyboardOptions(
+                                                keyboardType = KeyboardType.Number, // or Decimal
+                                                imeAction = ImeAction.Done
+                                            )
                                         )
 
                                         OutlinedTextField(
@@ -593,7 +616,11 @@ class MainActivity : ComponentActivity() {
                                             .weight(2.3f),
                                             value = frequency_textfield_text,
                                             onValueChange = { if (it.replace(".","").isDigitsOnly()) frequency_textfield_text = it },
-                                            label = { Text("exact", color = MaterialTheme.colors.onBackground) }
+                                            label = { Text("exact", color = MaterialTheme.colors.onBackground) },
+                                            keyboardOptions = KeyboardOptions(
+                                                keyboardType = KeyboardType.Number, // or Decimal
+                                                imeAction = ImeAction.Done
+                                            )
                                         )
 
                                         Button(colors = Buttoncolors,
@@ -728,28 +755,40 @@ class MainActivity : ComponentActivity() {
                                 Column (modifier = Modifier
                                     .padding(5.dp),
                                     verticalArrangement = Arrangement.spacedBy(40.dp)){
-                                    Text("Inductance:", color = MaterialTheme.colors.onBackground)
-                                    Text("Capacitance:", color = MaterialTheme.colors.onBackground)
-                                    Text("Resonation\n Frequency:", color = MaterialTheme.colors.onBackground)
+                                    Text("Inductance:", color = Color.Black)
+                                    Text("Capacitance:", color = Color.Black)
+                                    Text("Resonation\n Frequency:", color = Color.Black)
                                 }
                                 Column {
                                     OutlinedTextField(
                                         colors = textFieldColors,
                                         value = Calculator_L.value,
-                                        onValueChange = { if (it.replace(".","").replace("E","").replace("-","").replace("+","").isDigitsOnly()) Calculator_L.value = it },
-                                        label = { Text("H", color = MaterialTheme.colors.onBackground) }
+                                        onValueChange = { if (it.replace(".","").replace("E","").replace("-","").replace("+","").isDigitsOnly()) Calculator_L.value = keep_only_first_dot(it) },
+                                        label = { Text("H", color = MaterialTheme.colors.onBackground) },
+                                        keyboardOptions = KeyboardOptions(
+                                            keyboardType = KeyboardType.Number, // or Decimal
+                                            imeAction = ImeAction.Done
+                                        )
                                     )
                                     OutlinedTextField(
                                         colors = textFieldColors,
                                         value = Calculator_C.value,
-                                        onValueChange = { if (it.replace(".","").replace("E","").replace("-","").replace("+","").isDigitsOnly()) Calculator_C.value = it },
-                                        label = { Text("F", color = MaterialTheme.colors.onBackground) }
+                                        onValueChange = { if (it.replace(".","").replace("E","").replace("-","").replace("+","").isDigitsOnly()) Calculator_C.value = keep_only_first_dot(it) },
+                                        label = { Text("F", color = MaterialTheme.colors.onBackground) },
+                                        keyboardOptions = KeyboardOptions(
+                                            keyboardType = KeyboardType.Number, // or Decimal
+                                            imeAction = ImeAction.Done
+                                        )
                                     )
                                     OutlinedTextField(
                                         colors = textFieldColors,
                                         value = Calculator_F.value,
-                                        onValueChange = { if (it.replace(".","").replace("E","").replace("-","").replace("+","").isDigitsOnly()) Calculator_F.value = it },
-                                        label = { Text("Hz", color = MaterialTheme.colors.onBackground) }
+                                        onValueChange = { if (it.replace(".","").replace("E","").replace("-","").replace("+","").isDigitsOnly()) Calculator_F.value = keep_only_first_dot(it) },
+                                        label = { Text("Hz", color = MaterialTheme.colors.onBackground) },
+                                        keyboardOptions = KeyboardOptions(
+                                            keyboardType = KeyboardType.Number, // or Decimal
+                                            imeAction = ImeAction.Done
+                                        )
                                     )
                                 }
 
@@ -800,8 +839,10 @@ class MainActivity : ComponentActivity() {
                     {
                         Column {
                             Spacer(Modifier.height(50.dp))
-                            Text("Here are some useful tips:")
-                            Text("-To delete a component drag it to the left side of the screen.\n-You can zoom in to the graph for more precise reading.\n-The calculator screen needs 2 values. The last one will be calculated")
+                            Text("Here are some useful tips:",color = Color.Black)
+                            Text("-To delete a component drag it to the left side of the screen.",color = Color.Black)
+                            Text("-You can zoom in to the graph for more precise reading.",color = Color.Black)
+                            Text("-The calculator screen needs 2 values. The last one will be calculated",color = Color.Black)
                         }
                     }
                 }
@@ -1513,6 +1554,7 @@ class MainActivity : ComponentActivity() {
             Text(
                 text = graph_name, // Chart title
                 style = MaterialTheme.typography.h6,
+                color = Color.Black,
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
                     .padding(top = 20.dp)
@@ -1942,4 +1984,15 @@ fun roundToNSignificantDigits(number: Double, n: Int): Double {
 fun distance(point1: Position, point2: Position): Float
 {
     return sqrt((point1.x-point2.x)*(point1.x-point2.x)+(point1.y-point2.y)*(point1.y-point2.y))
+}
+
+fun keep_only_first_dot(input: String): String {
+    val firstDotIndex = input.indexOf('.')
+    return if (firstDotIndex == -1) {
+        input
+    } else {
+        val beforeDot = input.substring(0, firstDotIndex + 1)
+        val afterDot = input.substring(firstDotIndex + 1).replace(".", "")
+        beforeDot + afterDot
+    }
 }
