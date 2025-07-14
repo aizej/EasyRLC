@@ -780,6 +780,7 @@ class MainActivity : ComponentActivity() {
                                             imeAction = ImeAction.Done
                                         )
                                     )
+
                                     OutlinedTextField(
                                         colors = textFieldColors,
                                         value = Calculator_F.value,
