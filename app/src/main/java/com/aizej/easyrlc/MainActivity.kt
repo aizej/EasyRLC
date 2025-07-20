@@ -225,7 +225,7 @@ class MainActivity : ComponentActivity() {
                                     OutlinedTextField(
                                         colors = textFieldColors,
                                         value = R_spawn_text,
-                                        onValueChange = { if (it.replace(".","").isDigitsOnly()) R_spawn_text = it },
+                                        onValueChange = { if (it.replace(".","").isDigitsOnly()) R_spawn_text = keep_only_first_dot(it) },
                                         label = { Text("Ω", color = MaterialTheme.colors.onBackground) },
                                         keyboardOptions = KeyboardOptions(
                                             keyboardType = KeyboardType.Number, // or Decimal
@@ -262,7 +262,7 @@ class MainActivity : ComponentActivity() {
                                     OutlinedTextField(
                                         colors = textFieldColors,
                                         value = L_spawn_text,
-                                        onValueChange = { if (it.replace(".","").isDigitsOnly()) L_spawn_text = it },
+                                        onValueChange = { if (it.replace(".","").isDigitsOnly()) L_spawn_text = keep_only_first_dot(it) },
                                         label = { Text("H", color = MaterialTheme.colors.onBackground) },
                                         keyboardOptions = KeyboardOptions(
                                             keyboardType = KeyboardType.Number, // or Decimal
@@ -299,7 +299,7 @@ class MainActivity : ComponentActivity() {
                                     OutlinedTextField(
                                         colors = textFieldColors,
                                         value = C_spawn_text,
-                                        onValueChange = { if (it.replace(".","").isDigitsOnly()) C_spawn_text = it },
+                                        onValueChange = { if (it.replace(".","").isDigitsOnly()) C_spawn_text = keep_only_first_dot(it) },
                                         label = { Text("F", color = MaterialTheme.colors.onBackground) },
                                         keyboardOptions = KeyboardOptions(
                                             keyboardType = KeyboardType.Number, // or Decimal
@@ -590,7 +590,7 @@ class MainActivity : ComponentActivity() {
                                             modifier = Modifier
                                             .weight(2f),
                                             value = frequency_from.value,
-                                            onValueChange = { if (it.replace(".","").isDigitsOnly()) frequency_from.value = it },
+                                            onValueChange = { if (it.replace(".","").isDigitsOnly()) frequency_from.value = keep_only_first_dot(it) },
                                             label = { Text("from", color = MaterialTheme.colors.onBackground) },
                                             keyboardOptions = KeyboardOptions(
                                                 keyboardType = KeyboardType.Number, // or Decimal
@@ -602,7 +602,7 @@ class MainActivity : ComponentActivity() {
                                             modifier = Modifier
                                             .weight(1.5f),
                                             value = frequency_to.value,
-                                            onValueChange = { if (it.replace(".","").isDigitsOnly()) frequency_to.value = it },
+                                            onValueChange = { if (it.replace(".","").isDigitsOnly()) frequency_to.value = keep_only_first_dot(it) },
                                             label = { Text("to", color = MaterialTheme.colors.onBackground) },
                                             keyboardOptions = KeyboardOptions(
                                                 keyboardType = KeyboardType.Number, // or Decimal
@@ -615,7 +615,7 @@ class MainActivity : ComponentActivity() {
                                             modifier = Modifier
                                             .weight(2.3f),
                                             value = frequency_textfield_text,
-                                            onValueChange = { if (it.replace(".","").isDigitsOnly()) frequency_textfield_text = it },
+                                            onValueChange = { if (it.replace(".","").isDigitsOnly()) frequency_textfield_text = keep_only_first_dot(it) },
                                             label = { Text("exact", color = MaterialTheme.colors.onBackground) },
                                             keyboardOptions = KeyboardOptions(
                                                 keyboardType = KeyboardType.Number, // or Decimal
@@ -709,14 +709,16 @@ class MainActivity : ComponentActivity() {
                                         is_front = true,
                                         R.drawable.plus
                                     )
-                                } else if (key == "M") {
+                                }
+                                else if (key == "M") {
                                     DraggablePointComposable(
                                         components = components,
                                         componenta_name = key,
                                         is_front = true,
                                         R.drawable.minus
                                     )
-                                } else {
+                                }
+                                else {
                                     DraggablePointComposable(
                                         components = components,
                                         componenta_name = key,
@@ -988,7 +990,8 @@ class MainActivity : ComponentActivity() {
     {
         val posState = if (is_front) {
             components[componenta_name]?.frontPosition
-        } else {
+        }
+        else {
             components[componenta_name]?.backPosition
         }
 
@@ -1090,7 +1093,7 @@ class MainActivity : ComponentActivity() {
 
                     if (distance(key1_front,key2_front) < point_size*2)
                     {
-                        components[key]?.frontPosition?.value = key2_front
+                        components[key]?.frontPosition?.value = key2_front //?
 
                         if(!components[key]!!.input.contains(key2)) // key2 not in input
                         {
@@ -1098,7 +1101,6 @@ class MainActivity : ComponentActivity() {
                             components[key2]?.input?.add(key)
                         }
                     }
-
                     else if (distance(key1_front,key2_back) < point_size*2)
                     {
                         components[key]?.frontPosition?.value = key2_back
@@ -1107,28 +1109,6 @@ class MainActivity : ComponentActivity() {
                         if(!components[key]!!.input.contains(key2)) // key2 not in input of key1
                         {
                             components[key]?.input?.add(key2)
-                            components[key2]?.output?.add(key)
-                        }
-                    }
-
-                    else if (distance(key1_back,key2_front) < point_size*2)
-                    {
-                        components[key]?.backPosition?.value = key2_front
-
-                        if(!components[key]!!.output.contains(key2)) // key2 not in output of key1
-                        {
-                            components[key]?.output?.add(key2)
-                            components[key2]?.input?.add(key)
-                        }
-                    }
-
-                    else if (distance(key1_back,key2_back) < point_size*2)
-                    {
-                        components[key]?.backPosition?.value = key2_back
-
-                        if(!components[key]!!.output.contains(key2)) // key2 not in output of key1
-                        {
-                            components[key]?.output?.add(key2)
                             components[key2]?.output?.add(key)
                         }
                     }
@@ -1147,6 +1127,30 @@ class MainActivity : ComponentActivity() {
                             }
                         }
 
+                    }
+
+                     if (distance(key1_back,key2_front) < point_size*2)
+                    {
+                        components[key]?.backPosition?.value = key2_front
+
+                        if(!components[key]!!.output.contains(key2)) // key2 not in output of key1
+                        {
+                            components[key]?.output?.add(key2)
+                            components[key2]?.input?.add(key)
+                        }
+                    }
+                    else if (distance(key1_back,key2_back) < point_size*2)
+                    {
+                        components[key]?.backPosition?.value = key2_back
+
+                        if(!components[key]!!.output.contains(key2)) // key2 not in output of key1
+                        {
+                            components[key]?.output?.add(key2)
+                            components[key2]?.output?.add(key)
+                        }
+                    }
+                    else
+                    {
                         if(components[key]!!.output.contains(key2)) // key2 in output of key1
                         {
                             components[key]?.output?.remove(key2)
@@ -1163,7 +1167,7 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
-            if (key != "M" && key != "P")
+            if (key != "M" && key != "P")    // component deletion mechanism
             {
                 if (components[key]?.frontPosition?.value!!.x < 0 || components[key]?.backPosition?.value!!.x < 0) // komponent je castecne mimo obrazovku
                 {
