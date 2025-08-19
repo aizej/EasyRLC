@@ -56,6 +56,7 @@ dependencies {
     implementation(libs.androidx.ui)
     implementation(libs.androidx.material)
     implementation(libs.androidx.ui.tooling.preview)
+    implementation(libs.ui)
     debugImplementation(libs.androidx.ui.tooling)
 
     // Activity Compose
@@ -68,10 +69,10 @@ dependencies {
     implementation("com.tecacet:komplex:1.0.0")
 
 
+    //latex
+    implementation("com.google.accompanist:accompanist-webview:0.31.3-beta")
+
     //charts
-
-
-    //charts 2
     implementation(libs.vico.compose)
     implementation(libs.vico.compose.m2)
     implementation(libs.vico.compose.m3)

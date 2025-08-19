@@ -1,9 +1,11 @@
 package com.aizej.easyrlc
 
+import android.annotation.SuppressLint
 import android.content.res.Resources
 import android.graphics.Typeface
 import android.os.Bundle
 import android.util.Log
+import android.webkit.WebView
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -22,6 +24,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -33,6 +36,7 @@ import androidx.compose.material.ContentAlpha
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Surface
+import androidx.compose.material.Switch
 import androidx.compose.material.Text
 import androidx.compose.material.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -54,6 +58,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.IntOffset
@@ -61,6 +66,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.text.isDigitsOnly
 import com.aizej.easyrlc.MainActivity.Position
+import com.google.accompanist.web.LoadingState
+import com.google.accompanist.web.rememberWebViewState
 import com.jetpack.multipledraggable.MultipleDraggableTheme
 import com.jetpack.multipledraggable.Purple500
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
@@ -74,9 +81,7 @@ import com.patrykandpatrick.vico.core.cartesian.axis.HorizontalAxis
 import com.patrykandpatrick.vico.core.cartesian.axis.VerticalAxis
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModel
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
-import com.patrykandpatrick.vico.core.cartesian.data.CartesianLayerRangeProvider
 import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
-import com.patrykandpatrick.vico.core.common.Legend
 import com.tecacet.komplex.Complex
 import kotlin.math.PI
 import kotlin.math.abs
@@ -90,6 +95,7 @@ import kotlin.math.pow
 import kotlin.math.roundToInt
 import kotlin.math.sign
 import kotlin.math.sqrt
+
 
 class MainActivity : ComponentActivity() {
     var component_num_R = 1
@@ -170,7 +176,22 @@ class MainActivity : ComponentActivity() {
                     val Calculator_L = remember { mutableStateOf("") }
                     val Calculator_C = remember { mutableStateOf("") }
                     val Calculator_F = remember { mutableStateOf("") }
-                    
+                    val Calculator_R = remember { mutableStateOf("") }
+                    val Calculator_Q = remember { mutableStateOf("") }
+                    val Calculator_B = remember { mutableStateOf("") }
+                    val Calculator_FH = remember { mutableStateOf("") }
+                    val Calculator_FL = remember { mutableStateOf("") }
+                    val abs_at_fr = remember { mutableStateOf(0.0) }
+                    val phase_at_fr = remember { mutableStateOf(0.0) }
+                    val fr = remember { mutableStateOf(-1.0) }
+                    val fr_precision_error = remember { mutableStateOf(-1.0) }
+                    val fmd = remember { mutableStateOf(-1.0) }
+                    val fmh = remember { mutableStateOf(-1.0) }
+                    val Q = remember { mutableStateOf(-1.0) }
+                    val B = remember { mutableStateOf(-1.0) }
+                    val show_equation = remember { mutableStateOf(false) }
+                    val calculator_series = remember { mutableStateOf(true) }
+
                     val context = LocalContext.current
 
                     if(!components.contains("P"))
@@ -180,526 +201,475 @@ class MainActivity : ComponentActivity() {
 
 
 
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                    ) {
 
-                        if(current_window_shown.value == "circuit")
-                        {
-                        // Row with Buttons to add components
-                            Spacer(Modifier.height(30.dp))
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(140.dp)
-                                    .background(Purple500),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                // Resistor section
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxHeight()
-                                        .weight(1f)
-                                        .background(Color.White)
-                                        .padding(5.dp),
-                                    verticalArrangement = Arrangement.spacedBy(5.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    var R_spawn_text by remember { mutableStateOf("") }
 
-                                    Button(colors = Buttoncolors,
-                                        onClick = {
-                                        if(R_spawn_text == "")
-                                        {
-                                            Toast.makeText(context, "Chose value!", Toast.LENGTH_SHORT).show()
-                                        }
-                                        else{
-                                            add_resistor_to_components(components, R_spawn_text)
-                                        }
-                                    }) {
-                                        Text("R", color = Color.Black)
-                                    }
+                    if (current_window_shown.value == "graph")
+                    {
 
-                                    OutlinedTextField(
-                                        colors = textFieldColors,
-                                        value = R_spawn_text,
-                                        onValueChange = { if (it.replace(".","").isDigitsOnly()) R_spawn_text = keep_only_first_dot(it) },
-                                        label = { Text("Ω", color = MaterialTheme.colors.onBackground) },
-                                        keyboardOptions = KeyboardOptions(
-                                            keyboardType = KeyboardType.Number, // or Decimal
-                                            imeAction = ImeAction.Done
-                                        )
-                                    )
-                                }
-
-                                // Inductor section
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxHeight()
-                                        .weight(1f)
-                                        .background(Color.White)
-                                        .padding(5.dp),
-                                    verticalArrangement = Arrangement.spacedBy(5.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    var L_spawn_text by remember { mutableStateOf("") }
-
-                                    Button(colors = Buttoncolors,
-                                        onClick = {
-                                        if(L_spawn_text == "")
-                                        {
-                                            Toast.makeText(context, "Chose value!", Toast.LENGTH_SHORT).show()
-                                        }
-                                        else{
-                                            add_inductor_to_components(components, L_spawn_text)
-                                        }
-                                    }) {
-                                        Text("L", color = Color.Black)
-                                    }
-
-                                    OutlinedTextField(
-                                        colors = textFieldColors,
-                                        value = L_spawn_text,
-                                        onValueChange = { if (it.replace(".","").isDigitsOnly()) L_spawn_text = keep_only_first_dot(it) },
-                                        label = { Text("H", color = MaterialTheme.colors.onBackground) },
-                                        keyboardOptions = KeyboardOptions(
-                                            keyboardType = KeyboardType.Number, // or Decimal
-                                            imeAction = ImeAction.Done
-                                        )
-                                    )
-                                }
-
-                                // Capacitor section
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxHeight()
-                                        .weight(1f)
-                                        .background(Color.White)
-                                        .padding(5.dp),
-                                    verticalArrangement = Arrangement.spacedBy(5.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    var C_spawn_text by remember { mutableStateOf("") }
-
-                                    Button(colors = Buttoncolors,
-                                        onClick = {
-                                        if(C_spawn_text == "")
-                                        {
-                                            Toast.makeText(context, "Chose value!", Toast.LENGTH_SHORT).show()
-                                        }
-                                        else{
-                                            add_capacitor_to_components(components, C_spawn_text)
-                                        }
-                                    }) {
-                                        Text("C", color = Color.Black)
-                                    }
-
-                                    OutlinedTextField(
-                                        colors = textFieldColors,
-                                        value = C_spawn_text,
-                                        onValueChange = { if (it.replace(".","").isDigitsOnly()) C_spawn_text = keep_only_first_dot(it) },
-                                        label = { Text("F", color = MaterialTheme.colors.onBackground) },
-                                        keyboardOptions = KeyboardOptions(
-                                            keyboardType = KeyboardType.Number, // or Decimal
-                                            imeAction = ImeAction.Done
-                                        )
-                                    )
-                                }
-
-                                Column(
-                                    modifier = Modifier
-                                        .weight(0.8f)
-                                        .background(Color.White)
-                                        .fillMaxSize(),
-                                    verticalArrangement = Arrangement.Center,
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Button(colors = Buttoncolors,
-                                        onClick = {add_wire_to_components(components)}) {
-                                        Text("WIRE", color = Color.Black)
-                                    }
-                                }
-                            }
-                        }
 
 
                         Column(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .background(Color.White)
-                                .padding(5.dp)
-                                .verticalScroll(rememberScrollState()),
-                            verticalArrangement = Arrangement.Bottom,
+                                .background(Color.White),
+                            verticalArrangement = Arrangement.Top,
                             horizontalAlignment = Alignment.Start
                         ) {
-                            val abs_at_fr = remember { mutableStateOf(0.0) }
-                            val phase_at_fr = remember { mutableStateOf(0.0) }
-                            val fr = remember { mutableStateOf(-1.0) }
-                            val fr_precision_error = remember { mutableStateOf(-1.0) }
-                            val fmd = remember { mutableStateOf(-1.0) }
-                            val fmh = remember { mutableStateOf(-1.0) }
-                            val Q = remember { mutableStateOf(-1.0) }
-                            val B = remember { mutableStateOf(-1.0) }
-                            val show_equation = remember { mutableStateOf(false) }
+                            Spacer(Modifier.height(40.dp))
 
+                            if (show_stats.value) {
+                                Column(
+                                    modifier = Modifier
+                                        .background(Color.White)
+                                        .padding(5.dp),
+                                    verticalArrangement = Arrangement.Top,
+                                    horizontalAlignment = Alignment.Start
+                                ) {
 
-
-                            Row (modifier = Modifier
-                                .fillMaxWidth()
-                                .height(60.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.End)
-                            ){
-                                if(current_window_shown.value == "graph")
-                                {
-                                    Button(colors = Buttoncolors,
-                                        onClick = {show_equation.value = !show_equation.value })
-                                    {
-                                        Text("EQUATION", color = Color.Black)
+                                    if (show_equation.value) {
+                                        SelectableText(
+                                            "Equation: ${
+                                                total_equation.value.replace(
+                                                    "x",
+                                                    "f"
+                                                )
+                                            }"
+                                        )
                                     }
+                                    SelectableText(
+                                        "Resonation frequency (fr): ${
+                                            roundToNSignificantDigits(
+                                                fr.value,
+                                                round_to_decilal_places
+                                            )
+                                        } (+-${
+                                            roundToNSignificantDigits(
+                                                fr_precision_error.value,
+                                                round_to_decilal_places
+                                            )
+                                        })"
+                                    )
+                                    SelectableText(
+                                        "Impedance on fr: ${
+                                            roundToNSignificantDigits(
+                                                abs_at_fr.value,
+                                                round_to_decilal_places
+                                            )
+                                        }"
+                                    )
+                                    SelectableText(
+                                        "fmd: ${
+                                            roundToNSignificantDigits(
+                                                fmd.value,
+                                                round_to_decilal_places
+                                            )
+                                        }"
+                                    )
+                                    SelectableText(
+                                        "fmh: ${
+                                            roundToNSignificantDigits(
+                                                fmh.value,
+                                                round_to_decilal_places
+                                            )
+                                        }"
+                                    )
+                                    SelectableText(
+                                        "B: ${
+                                            roundToNSignificantDigits(
+                                                B.value,
+                                                round_to_decilal_places
+                                            )
+                                        }"
+                                    )
+                                    SelectableText(
+                                        "Q: ${
+                                            roundToNSignificantDigits(
+                                                Q.value,
+                                                round_to_decilal_places
+                                            )
+                                        }"
+                                    )
 
-                                    Button(colors = Buttoncolors,
-                                        onClick =
-                                        {
-                                            //check if 0 is in phase graph range
-                                            val is_zero_in_range = sign(phase_graph_data.value[0].y) == -1*sign(phase_graph_data.value[graph_lenght-1].y)
-                                            if (is_zero_in_range)
-                                            {
-                                                var result = find_phase(total_equation.value,graph_from.value,graph_to.value, precision_steps, 0.0)
-                                                fr.value = result.first
-                                                fr_precision_error.value = result.second
-
-                                                //cant evaluate exactly at fr because there are issues with division with 0
-                                                abs_at_fr.value = (amp_phase_from_complex(calculate_value(total_equation.value,fr.value+fr_precision_error.value)).first+
-                                                        amp_phase_from_complex(calculate_value(total_equation.value,fr.value-fr_precision_error.value)).first)/2
-
-
-                                                result = find_phase(total_equation.value,graph_from.value,graph_to.value, precision_steps, 45.0)
-                                                val plus_45_phase = result.first
-                                                val plus_45_phase_error = result.second
-
-
-                                                result = find_phase(total_equation.value,graph_from.value,graph_to.value, precision_steps, -45.0)
-                                                val minus_45_phase = result.first
-                                                val minus_45_phase_error = result.second
-
-                                                if (plus_45_phase> minus_45_phase)
-                                                {
-                                                    fmd.value = minus_45_phase
-                                                    fmh.value = plus_45_phase
-                                                }
-                                                else
-                                                {
-                                                    fmd.value = plus_45_phase
-                                                    fmh.value = minus_45_phase
-                                                }
-
-                                                B.value = fmh.value - fmd.value
-                                                Q.value = fr.value/B.value
-                                            }
-                                            else
-                                            {
-                                                Toast.makeText(context, "Cannot find fr", Toast.LENGTH_LONG).show()
-                                            }
-
-                                            show_stats.value = !show_stats.value
-                                        })
-                                    {
-                                        Text("STATS", color = Color.Black)
-                                    }
-                                }
-
-                                if(current_window_shown.value == "circuit" || current_window_shown.value == "help")
-                                {
-                                    Button(colors = Buttoncolors,
-                                        onClick = {
-                                            if(current_window_shown.value == "circuit")
-                                            {
-                                                current_window_shown.value = "help"
-                                            }
-                                            else
-                                            {
-                                                current_window_shown.value = "circuit"
-                                            }
-                                        }) {
-                                        Text("HELP", color = Color.Black)
-                                    }
-                                }
-
-
-                                if(current_window_shown.value == "circuit" || current_window_shown.value == "calculator")
-                                {
-                                    Button(colors = Buttoncolors,
-                                        onClick = {
-                                            if(current_window_shown.value == "circuit")
-                                            {
-                                                current_window_shown.value = "calculator"
-                                            }
-                                            else
-                                            {
-                                                current_window_shown.value = "circuit"
-                                            }
-                                        }) {
-                                        Text("CALCULATOR", color = Color.Black)
-                                    }
-                                }
-
-
-                                if(current_window_shown.value == "circuit" || current_window_shown.value == "graph")
-                                {
-                                    Button(colors = Buttoncolors,
-                                        onClick =
-                                            {
-                                                if(current_window_shown.value != "graph")
-                                                {
-                                                    show_stats.value = false
-                                                    graph_from.value = graph_absolute_start_at
-                                                    graph_to.value = graph_absolute_end_at
-
-
-                                                    var solved_components = components.mapValues { it.value.deepCopy() }.toMutableMap()
-
-                                                    if (solved_components.size != 2){
-                                                        simplyfy(solved_components)
-                                                        var the_component: String = ""
-                                                        solved_components.entries.forEach { (key, _) -> the_component = key }
-
-                                                        if (total_equation.value != "0" && solved_components.size == 1
-                                                            && (solved_components[the_component]!!.input.contains("M") || solved_components[the_component]!!.output.contains("M"))
-                                                            && (solved_components[the_component]!!.input.contains("P") || solved_components[the_component]!!.output.contains("P")))
-                                                        {
-                                                            solved_components.entries.forEach { (key, _) -> total_equation.value = solved_components[key]!!.equation } // there should be only one component
-
-                                                            var data = getvalues_for_initial_graph(total_equation.value, graph_from.value,graph_to.value)
-                                                            abs_graph_data.value = data.first
-                                                            phase_graph_data.value = data.second
-                                                            //Log.d("autorange_posible","${phase_graph_data.value[0].y != phase_graph_data.value[graph_lenght-1].y}")
-                                                            if (phase_graph_data.value[0].y != phase_graph_data.value[graph_lenght-1].y)  // cant estimate graph for just L C
-                                                            {
-                                                                val newrange = get_range_automaticaly(phase_graph_data.value,total_equation.value)
-                                                                Log.d("autorange:","${newrange}")
-                                                                if (newrange.first != (-1).toFloat())
-                                                                {
-                                                                    if (newrange.first == newrange.second)
-                                                                    {
-                                                                        graph_from.value = (newrange.first*0.9).toDouble()
-                                                                        graph_to.value = (newrange.second*1.1).toDouble()
-                                                                    }
-                                                                    else
-                                                                    {
-                                                                        graph_from.value = newrange.first.toDouble()
-                                                                        graph_to.value = newrange.second.toDouble()
-                                                                    }
-                                                                }
-
-                                                                data = getvalues_for_initial_graph(total_equation.value, graph_from.value,graph_to.value)
-                                                                abs_graph_data.value = data.first
-                                                                phase_graph_data.value = data.second
-                                                            }
-
-
-                                                            current_window_shown.value = "graph"
-                                                        }
-                                                        else
-                                                        {
-                                                            //Log.d("test","${total_equation.value}")
-                                                            //Log.d("test","${solved_components.size}")
-                                                            if (solved_components.isEmpty())
-                                                            {
-                                                                Toast.makeText(context, "The components need to be connected to RED and BLUE!", Toast.LENGTH_LONG).show()
-                                                            }
-                                                            else if (solved_components.size == 1)
-                                                            {
-                                                                Toast.makeText(context, "An Error occurred :(", Toast.LENGTH_LONG).show()
-                                                            }
-                                                            else
-                                                            {
-                                                                Toast.makeText(context, "Cant yet solve this circuit :(", Toast.LENGTH_LONG).show()
-                                                            }
-                                                        }
-                                                    }
-                                                    else{
-                                                        if (current_window_shown.value == "circuit")
-                                                        {
-                                                            Toast.makeText(context, "Add or connect components to BLUE and RED", Toast.LENGTH_LONG).show()
-                                                        }
-                                                    }
-                                                }
-                                                else
-                                                {
-                                                    current_window_shown.value = "circuit"
-                                                }
-                                            })
-                                    {
-                                        Text("GRAPH", color = Color.Black)
-                                    }
                                 }
                             }
 
 
+                            Row() {
+                                var frequency_textfield_text by remember { mutableStateOf("") }
+                                var frequency_from = remember { mutableStateOf("") }
+                                var frequency_to = remember { mutableStateOf("") }
+                                val result_from_eqact_calc =
+                                    remember { mutableStateOf(Complex(0.0, 0.0)) }
+                                val Z_amount = remember { mutableStateOf(0.0) }
+                                val Z_phase = remember { mutableStateOf(0.0) }
+                                val Z_real = remember { mutableStateOf(0.0) }
+                                val Z_imaginary = remember { mutableStateOf(0.0) }
 
-                            if (current_window_shown.value == "graph")
-                            {
-                                if(show_stats.value)
-                                {
-                                    Column(
-                                        modifier = Modifier
-                                            .background(Color.White)
-                                            .padding(5.dp),
-                                        verticalArrangement = Arrangement.Top,
-                                        horizontalAlignment = Alignment.Start
-                                    ) {
 
-                                        if (show_equation.value)
-                                        {
-                                            SelectableText("Equation: ${total_equation.value.replace("x","f")}")
+                                OutlinedTextField(
+                                    colors = textFieldColors,
+                                    modifier = Modifier
+                                        .weight(2f),
+                                    value = frequency_from.value,
+                                    onValueChange = {
+                                        if (it.replace(".", "")
+                                                .isDigitsOnly()
+                                        ) frequency_from.value = keep_only_first_dot(it)
+                                    },
+                                    label = {
+                                        Text(
+                                            "from",
+                                            color = MaterialTheme.colors.onBackground
+                                        )
+                                    },
+                                    keyboardOptions = KeyboardOptions(
+                                        keyboardType = KeyboardType.Number, // or Decimal
+                                        imeAction = ImeAction.Done
+                                    )
+                                )
+                                OutlinedTextField(
+                                    colors = textFieldColors,
+                                    modifier = Modifier
+                                        .weight(1.5f),
+                                    value = frequency_to.value,
+                                    onValueChange = {
+                                        if (it.replace(".", "")
+                                                .isDigitsOnly()
+                                        ) frequency_to.value = keep_only_first_dot(it)
+                                    },
+                                    label = {
+                                        Text(
+                                            "to",
+                                            color = MaterialTheme.colors.onBackground
+                                        )
+                                    },
+                                    keyboardOptions = KeyboardOptions(
+                                        keyboardType = KeyboardType.Number, // or Decimal
+                                        imeAction = ImeAction.Done
+                                    )
+                                )
+
+                                OutlinedTextField(
+                                    colors = textFieldColors,
+                                    modifier = Modifier
+                                        .weight(2.3f),
+                                    value = frequency_textfield_text,
+                                    onValueChange = {
+                                        if (it.replace(".", "")
+                                                .isDigitsOnly()
+                                        ) frequency_textfield_text = keep_only_first_dot(it)
+                                    },
+                                    label = {
+                                        Text(
+                                            "exact",
+                                            color = MaterialTheme.colors.onBackground
+                                        )
+                                    },
+                                    keyboardOptions = KeyboardOptions(
+                                        keyboardType = KeyboardType.Number, // or Decimal
+                                        imeAction = ImeAction.Done
+                                    )
+                                )
+
+                                Button(
+                                    colors = Buttoncolors,
+                                    onClick = {
+                                        if (frequency_from.value != "" && frequency_to.value != "") {
+                                            graph_from.value =
+                                                frequency_from.value.toDouble()
+                                            graph_to.value = frequency_to.value.toDouble()
                                         }
-                                        SelectableText("Resonation frequency (fr): ${roundToNSignificantDigits(fr.value,round_to_decilal_places)} (+-${roundToNSignificantDigits(fr_precision_error.value,round_to_decilal_places)})")
-                                        SelectableText("Impedance on fr: ${roundToNSignificantDigits(abs_at_fr.value,round_to_decilal_places)}")
-                                        SelectableText("fmd: ${roundToNSignificantDigits(fmd.value,round_to_decilal_places)}")
-                                        SelectableText("fmh: ${roundToNSignificantDigits(fmh.value,round_to_decilal_places)}")
-                                        SelectableText("B: ${roundToNSignificantDigits(B.value,round_to_decilal_places)}")
-                                        SelectableText("Q: ${roundToNSignificantDigits(Q.value,round_to_decilal_places)}")
 
-                                    }
+                                        val data = getvalues_for_initial_graph(
+                                            total_equation.value,
+                                            graph_from.value,
+                                            graph_to.value
+                                        )
+                                        abs_graph_data.value = data.first
+                                        phase_graph_data.value = data.second
+
+                                        if (frequency_textfield_text != "") {
+                                            result_from_eqact_calc.value = calculate_value(
+                                                total_equation.value,
+                                                frequency_textfield_text.toDouble()
+                                            )
+
+                                            Z_amount.value =
+                                                sqrt(result_from_eqact_calc.value.real * result_from_eqact_calc.value.real + result_from_eqact_calc.value.img * result_from_eqact_calc.value.img)
+                                            // round if too big
+                                            if (Z_amount.value > 0.01) {
+                                                Z_amount.value = roundToNSignificantDigits(
+                                                    Z_amount.value,
+                                                    round_to_decilal_places
+                                                )
+                                                Z_real.value = roundToNSignificantDigits(
+                                                    result_from_eqact_calc.value.real,
+                                                    round_to_decilal_places
+                                                )
+                                                Z_imaginary.value =
+                                                    roundToNSignificantDigits(
+                                                        result_from_eqact_calc.value.img,
+                                                        round_to_decilal_places
+                                                    )
+                                            } else {
+                                                Z_real.value =
+                                                    result_from_eqact_calc.value.real
+                                                Z_imaginary.value =
+                                                    result_from_eqact_calc.value.img
+                                            }
+
+
+
+                                            if (result_from_eqact_calc.value.real != 0.toDouble()) {
+                                                Z_phase.value =
+                                                    (atan(result_from_eqact_calc.value.img / result_from_eqact_calc.value.real) / PI * 180)
+                                            } else {
+                                                if (result_from_eqact_calc.value.img == 0.toDouble()) {
+                                                    Z_phase.value = 0.0
+                                                } else if (result_from_eqact_calc.value.img < 0.toDouble()) {
+                                                    Z_phase.value = -90.0
+                                                } else {
+                                                    Z_phase.value = 90.0
+                                                }
+                                            }
+
+                                            Z_phase.value = roundToNSignificantDigits(
+                                                Z_phase.value,
+                                                round_to_decilal_places
+                                            )
+                                        }
+                                    },
+                                    modifier = Modifier
+                                        .weight(1.2f)
+                                ) {
+
+                                    Text("=", color = Color.Black)
                                 }
 
 
                                 Column(
                                     modifier = Modifier
-                                        .fillMaxSize()
-                                        .background(Color.White),
-                                    verticalArrangement = Arrangement.Top,
-                                    horizontalAlignment = Alignment.Start
-                                ){
-                                    Row () {
-                                        var frequency_textfield_text by remember { mutableStateOf("") }
-                                        var frequency_from = remember { mutableStateOf("") }
-                                        var frequency_to = remember { mutableStateOf("") }
-                                        val result_from_eqact_calc = remember { mutableStateOf(Complex(0.0, 0.0)) }
-                                        val Z_amount = remember {mutableStateOf(0.0)}
-                                        val Z_phase = remember {mutableStateOf(0.0)}
-                                        val Z_real = remember {mutableStateOf(0.0)}
-                                        val Z_imaginary = remember {mutableStateOf(0.0)}
+                                        .weight(4f)
+                                )
+                                {
+                                    Text(
+                                        "${Z_amount.value}∠${Z_phase.value}°",
+                                        color = Color.Black
+                                    )
+                                    Text(
+                                        "(${Z_real.value}, i${Z_imaginary.value})",
+                                        color = Color.Black
+                                    )
+                                }
+                            }
+                            MyChart(
+                                abs_graph_data.value,
+                                title_x = "Frequency [Hz]",
+                                title_y = "Impedance [Ω]",
+                                graph_name = "Impedance"
+                            )
+                            MyChart(
+                                phase_graph_data.value,
+                                title_x = "Frequency [Hz]",
+                                title_y = "Phase [°]",
+                                graph_name = "Phase"
+                            )
+                        }
+
+                    }
+
+                    if (current_window_shown.value == "circuit")
+                    {
 
 
-                                        OutlinedTextField(
-                                            colors = textFieldColors,
-                                            modifier = Modifier
-                                            .weight(2f),
-                                            value = frequency_from.value,
-                                            onValueChange = { if (it.replace(".","").isDigitsOnly()) frequency_from.value = keep_only_first_dot(it) },
-                                            label = { Text("from", color = MaterialTheme.colors.onBackground) },
-                                            keyboardOptions = KeyboardOptions(
-                                                keyboardType = KeyboardType.Number, // or Decimal
-                                                imeAction = ImeAction.Done
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 30.dp)
+                                .height(140.dp)
+                                .background(Purple500)
+                                ,
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        )
+                        {
+                            // Resistor section
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxHeight()
+                                    .weight(1f)
+                                    .background(Color.White)
+                                    .padding(5.dp),
+                                verticalArrangement = Arrangement.spacedBy(5.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            )
+                            {
+                                var R_spawn_text by remember { mutableStateOf("") }
+
+                                Button(
+                                    colors = Buttoncolors,
+                                    onClick = {
+                                        if (R_spawn_text == "") {
+                                            Toast.makeText(
+                                                context,
+                                                "Chose value!",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        } else {
+                                            add_resistor_to_components(
+                                                components,
+                                                R_spawn_text
                                             )
-                                        )
-                                        OutlinedTextField(
-                                            colors = textFieldColors,
-                                            modifier = Modifier
-                                            .weight(1.5f),
-                                            value = frequency_to.value,
-                                            onValueChange = { if (it.replace(".","").isDigitsOnly()) frequency_to.value = keep_only_first_dot(it) },
-                                            label = { Text("to", color = MaterialTheme.colors.onBackground) },
-                                            keyboardOptions = KeyboardOptions(
-                                                keyboardType = KeyboardType.Number, // or Decimal
-                                                imeAction = ImeAction.Done
-                                            )
-                                        )
-
-                                        OutlinedTextField(
-                                            colors = textFieldColors,
-                                            modifier = Modifier
-                                            .weight(2.3f),
-                                            value = frequency_textfield_text,
-                                            onValueChange = { if (it.replace(".","").isDigitsOnly()) frequency_textfield_text = keep_only_first_dot(it) },
-                                            label = { Text("exact", color = MaterialTheme.colors.onBackground) },
-                                            keyboardOptions = KeyboardOptions(
-                                                keyboardType = KeyboardType.Number, // or Decimal
-                                                imeAction = ImeAction.Done
-                                            )
-                                        )
-
-                                        Button(colors = Buttoncolors,
-                                            onClick = {
-                                            if (frequency_from.value != "" && frequency_to.value != "")
-                                            {
-                                                graph_from.value = frequency_from.value.toDouble()
-                                                graph_to.value = frequency_to.value.toDouble()
-                                            }
-
-                                            val data = getvalues_for_initial_graph(total_equation.value, graph_from.value,graph_to.value)
-                                            abs_graph_data.value = data.first
-                                            phase_graph_data.value = data.second
-
-                                            if (frequency_textfield_text != "")
-                                            {
-                                                result_from_eqact_calc.value = calculate_value(total_equation.value,frequency_textfield_text.toDouble())
-
-                                                Z_amount.value = sqrt(result_from_eqact_calc.value.real*result_from_eqact_calc.value.real+result_from_eqact_calc.value.img*result_from_eqact_calc.value.img)
-                                                // round if too big
-                                                if (Z_amount.value > 0.01)
-                                                {
-                                                    Z_amount.value = roundToNSignificantDigits(Z_amount.value, round_to_decilal_places)
-                                                    Z_real.value = roundToNSignificantDigits(result_from_eqact_calc.value.real, round_to_decilal_places)
-                                                    Z_imaginary.value = roundToNSignificantDigits(result_from_eqact_calc.value.img, round_to_decilal_places)
-                                                }
-                                                else
-                                                {
-                                                    Z_real.value = result_from_eqact_calc.value.real
-                                                    Z_imaginary.value = result_from_eqact_calc.value.img
-                                                }
-
-
-
-                                                if (result_from_eqact_calc.value.real != 0.toDouble())
-                                                {
-                                                    Z_phase.value = (atan(result_from_eqact_calc.value.img/result_from_eqact_calc.value.real)/PI*180)
-                                                }
-                                                else
-                                                {
-                                                    if (result_from_eqact_calc.value.img == 0.toDouble())
-                                                    {
-                                                        Z_phase.value = 0.0
-                                                    }
-                                                    else if (result_from_eqact_calc.value.img < 0.toDouble())
-                                                    {
-                                                        Z_phase.value = -90.0
-                                                    }
-                                                    else{
-                                                        Z_phase.value = 90.0
-                                                    }
-                                                }
-
-                                                Z_phase.value = roundToNSignificantDigits(Z_phase.value,round_to_decilal_places)
-                                            }
-                                                         },
-                                            modifier = Modifier
-                                            .weight(1.2f)) {
-
-                                            Text("=", color = Color.Black)
                                         }
-
-
-                                        Column(modifier = Modifier
-                                            .weight(4f))
-                                        {
-                                            Text("${Z_amount.value}∠${Z_phase.value}°", color = Color.Black)
-                                            Text("(${Z_real.value}, i${Z_imaginary.value})", color = Color.Black)
-                                        }
-                                    }
-                                    MyChart(abs_graph_data.value, title_x = "Frequency [Hz]", title_y = "Impedance [Ω]", graph_name = "Impedance")
-                                    MyChart(phase_graph_data.value, title_x = "Frequency [Hz]",title_y = "Phase [°]", graph_name = "Phase")
+                                    }) {
+                                    Text("R", color = Color.Black)
                                 }
 
+                                OutlinedTextField(
+                                    colors = textFieldColors,
+                                    value = R_spawn_text,
+                                    onValueChange = {
+                                        if (it.replace(".", "")
+                                                .isDigitsOnly()
+                                        ) R_spawn_text = keep_only_first_dot(it)
+                                    },
+                                    label = {
+                                        Text(
+                                            "Ω",
+                                            color = MaterialTheme.colors.onBackground
+                                        )
+                                    },
+                                    keyboardOptions = KeyboardOptions(
+                                        keyboardType = KeyboardType.Number, // or Decimal
+                                        imeAction = ImeAction.Done
+                                    )
+                                )
                             }
-                            Spacer(Modifier.height(50.dp))
+
+                            // Inductor section
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxHeight()
+                                    .weight(1f)
+                                    .background(Color.White)
+                                    .padding(5.dp),
+                                verticalArrangement = Arrangement.spacedBy(5.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            )
+                            {
+                                var L_spawn_text by remember { mutableStateOf("") }
+
+                                Button(
+                                    colors = Buttoncolors,
+                                    onClick = {
+                                        if (L_spawn_text == "") {
+                                            Toast.makeText(
+                                                context,
+                                                "Chose value!",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        } else {
+                                            add_inductor_to_components(
+                                                components,
+                                                L_spawn_text
+                                            )
+                                        }
+                                    }) {
+                                    Text("L", color = Color.Black)
+                                }
+
+                                OutlinedTextField(
+                                    colors = textFieldColors,
+                                    value = L_spawn_text,
+                                    onValueChange = {
+                                        if (it.replace(".", "")
+                                                .isDigitsOnly()
+                                        ) L_spawn_text = keep_only_first_dot(it)
+                                    },
+                                    label = {
+                                        Text(
+                                            "H",
+                                            color = MaterialTheme.colors.onBackground
+                                        )
+                                    },
+                                    keyboardOptions = KeyboardOptions(
+                                        keyboardType = KeyboardType.Number, // or Decimal
+                                        imeAction = ImeAction.Done
+                                    )
+                                )
+                            }
+
+                            // Capacitor section
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxHeight()
+                                    .weight(1f)
+                                    .background(Color.White)
+                                    .padding(5.dp),
+                                verticalArrangement = Arrangement.spacedBy(5.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            )
+                            {
+                                var C_spawn_text by remember { mutableStateOf("") }
+
+                                Button(
+                                    colors = Buttoncolors,
+                                    onClick = {
+                                        if (C_spawn_text == "") {
+                                            Toast.makeText(
+                                                context,
+                                                "Chose value!",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        } else {
+                                            add_capacitor_to_components(
+                                                components,
+                                                C_spawn_text
+                                            )
+                                        }
+                                    }) {
+                                    Text("C", color = Color.Black)
+                                }
+
+                                OutlinedTextField(
+                                    colors = textFieldColors,
+                                    value = C_spawn_text,
+                                    onValueChange = {
+                                        if (it.replace(".", "")
+                                                .isDigitsOnly()
+                                        ) C_spawn_text = keep_only_first_dot(it)
+                                    },
+                                    label = {
+                                        Text(
+                                            "F",
+                                            color = MaterialTheme.colors.onBackground
+                                        )
+                                    },
+                                    keyboardOptions = KeyboardOptions(
+                                        keyboardType = KeyboardType.Number, // or Decimal
+                                        imeAction = ImeAction.Done
+                                    )
+                                )
+                            }
+
+                            // Wire
+                            Column(
+                                modifier = Modifier
+                                    .weight(0.8f)
+                                    .background(Color.White)
+                                    .fillMaxSize(),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            )
+                            {
+                                Button(
+                                    colors = Buttoncolors,
+                                    onClick = { add_wire_to_components(components) }) {
+                                    Text("WIRE", color = Color.Black)
+                                }
+                            }
                         }
-                    }
-                    if(current_window_shown.value == "circuit") {
+
                         components.entries.forEach { (key, _) ->
                             key(key) {
                                 if (key == "P") {
@@ -709,16 +679,14 @@ class MainActivity : ComponentActivity() {
                                         is_front = true,
                                         R.drawable.plus
                                     )
-                                }
-                                else if (key == "M") {
+                                } else if (key == "M") {
                                     DraggablePointComposable(
                                         components = components,
                                         componenta_name = key,
                                         is_front = true,
                                         R.drawable.minus
                                     )
-                                }
-                                else {
+                                } else {
                                     DraggablePointComposable(
                                         components = components,
                                         componenta_name = key,
@@ -739,117 +707,817 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                         Connect_near_components(components = components)
-                    }
 
+                    }
 
                     if (current_window_shown.value == "calculator")
                     {
                         Column(
                             modifier = Modifier
-                                .fillMaxSize()
-                                .padding(20.dp),
+                                //.fillMaxSize()
+                                .padding(40.dp)
+                                .verticalScroll(rememberScrollState()),
                             verticalArrangement = Arrangement.spacedBy(10.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
-                        ){
-                            Spacer(Modifier.height(50.dp))
-                            Row (){
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically)
+                            {
+                                Text( "Inductance:", color = Color.Black)
 
-                                Column (modifier = Modifier
-                                    .padding(5.dp),
-                                    verticalArrangement = Arrangement.spacedBy(40.dp)){
-                                    Text("Inductance:", color = Color.Black)
-                                    Text("Capacitance:", color = Color.Black)
-                                    Text("Resonation\n Frequency:", color = Color.Black)
-                                }
-                                Column {
-                                    OutlinedTextField(
-                                        colors = textFieldColors,
-                                        value = Calculator_L.value,
-                                        onValueChange = { if (it.replace(".","").replace("E","").replace("-","").replace("+","").isDigitsOnly()) Calculator_L.value = keep_only_first_dot(it) },
-                                        label = { Text("H", color = MaterialTheme.colors.onBackground) },
-                                        keyboardOptions = KeyboardOptions(
-                                            keyboardType = KeyboardType.Number, // or Decimal
-                                            imeAction = ImeAction.Done
+                                OutlinedTextField(
+                                    colors = textFieldColors,
+                                    value = Calculator_L.value,
+                                    onValueChange = {
+                                        if (it.replace(".", "").replace("E", "")
+                                                .replace("-", "").replace("+", "")
+                                                .isDigitsOnly()
+                                        ) Calculator_L.value = keep_only_first_dot(it)
+                                    },
+                                    label = {
+                                        Text(
+                                            "H",
+                                            color = MaterialTheme.colors.onBackground
                                         )
-                                    )
-                                    OutlinedTextField(
-                                        colors = textFieldColors,
-                                        value = Calculator_C.value,
-                                        onValueChange = { if (it.replace(".","").replace("E","").replace("-","").replace("+","").isDigitsOnly()) Calculator_C.value = keep_only_first_dot(it) },
-                                        label = { Text("F", color = MaterialTheme.colors.onBackground) },
-                                        keyboardOptions = KeyboardOptions(
-                                            keyboardType = KeyboardType.Number, // or Decimal
-                                            imeAction = ImeAction.Done
+                                    },
+                                    keyboardOptions = KeyboardOptions(
+                                        keyboardType = KeyboardType.Number, // or Decimal
+                                        imeAction = ImeAction.Done
+                                    ),
+                                    modifier = Modifier.width(150.dp)
+                                )
+                            }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically)
+                            {
+                                Text("Capacitance:", color = Color.Black)
+
+                                OutlinedTextField(
+                                    colors = textFieldColors,
+                                    value = Calculator_C.value,
+                                    onValueChange = {
+                                        if (it.replace(".", "").replace("E", "")
+                                                .replace("-", "").replace("+", "")
+                                                .isDigitsOnly()
+                                        ) Calculator_C.value = keep_only_first_dot(it)
+                                    },
+                                    label = {
+                                        Text(
+                                            "F",
+                                            color = MaterialTheme.colors.onBackground
                                         )
-                                    )
+                                    },
+                                    keyboardOptions = KeyboardOptions(
+                                        keyboardType = KeyboardType.Number, // or Decimal
+                                        imeAction = ImeAction.Done
+                                    ),
+                                    modifier = Modifier.width(150.dp)
+                                )
+                            }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically)
+                            {
+                                Text("Resonation\nFrequency:", color = Color.Black)
 
-                                    OutlinedTextField(
-                                        colors = textFieldColors,
-                                        value = Calculator_F.value,
-                                        onValueChange = { if (it.replace(".","").replace("E","").replace("-","").replace("+","").isDigitsOnly()) Calculator_F.value = keep_only_first_dot(it) },
-                                        label = { Text("Hz", color = MaterialTheme.colors.onBackground) },
-                                        keyboardOptions = KeyboardOptions(
-                                            keyboardType = KeyboardType.Number, // or Decimal
-                                            imeAction = ImeAction.Done
+                                OutlinedTextField(
+                                    colors = textFieldColors,
+                                    value = Calculator_F.value,
+                                    onValueChange = {
+                                        if (it.replace(".", "").replace("E", "")
+                                                .replace("-", "").replace("+", "")
+                                                .isDigitsOnly()
+                                        ) Calculator_F.value = keep_only_first_dot(it)
+                                    },
+                                    label = {
+                                        Text(
+                                            "Hz",
+                                            color = MaterialTheme.colors.onBackground
                                         )
-                                    )
-                                }
+                                    },
+                                    keyboardOptions = KeyboardOptions(
+                                        keyboardType = KeyboardType.Number, // or Decimal
+                                        imeAction = ImeAction.Done
+                                    ),
+                                    modifier = Modifier.width(150.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically)
+                            {
+                                Text(if (calculator_series.value) "Series RLC" else "Parallel RLC")
 
+                                Switch(
+                                    checked = calculator_series.value,
+                                    onCheckedChange = { calculator_series.value = it }
+                                )
+                            }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically)
+                            {
+                                Text("Resistance:", color = Color.Black)
 
+                                OutlinedTextField(
+                                    colors = textFieldColors,
+                                    value = Calculator_R.value,
+                                    onValueChange = {
+                                        if (it.replace(".", "").replace("E", "")
+                                                .replace("-", "").replace("+", "")
+                                                .isDigitsOnly()
+                                        ) Calculator_R.value = keep_only_first_dot(it)
+                                    },
+                                    label = {
+                                        Text(
+                                            "Ω",
+                                            color = MaterialTheme.colors.onBackground
+                                        )
+                                    },
+                                    keyboardOptions = KeyboardOptions(
+                                        keyboardType = KeyboardType.Number, // or Decimal
+                                        imeAction = ImeAction.Done
+                                    ),
+                                    modifier = Modifier.width(150.dp)
+                                )
+                            }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically)
+                            {
+                                Text("Bandwidth:", color = Color.Black)
+
+                                OutlinedTextField(
+                                    colors = textFieldColors,
+                                    value = Calculator_B.value,
+                                    onValueChange = {
+                                        if (it.replace(".", "").replace("E", "")
+                                                .replace("-", "").replace("+", "")
+                                                .isDigitsOnly()
+                                        ) Calculator_B.value = keep_only_first_dot(it)
+                                    },
+                                    label = {
+                                        Text(
+                                            "Hz",
+                                            color = MaterialTheme.colors.onBackground
+                                        )
+                                    },
+                                    keyboardOptions = KeyboardOptions(
+                                        keyboardType = KeyboardType.Number, // or Decimal
+                                        imeAction = ImeAction.Done
+                                    ),
+                                    modifier = Modifier.width(150.dp)
+                                )
+                            }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically)
+                            {
+                                Text("Quality\nfactor:", color = Color.Black)
+
+                                OutlinedTextField(
+                                    colors = textFieldColors,
+                                    value = Calculator_Q.value,
+                                    onValueChange = {
+                                        if (it.replace(".", "").replace("E", "")
+                                                .replace("-", "").replace("+", "")
+                                                .isDigitsOnly()
+                                        ) Calculator_Q.value = keep_only_first_dot(it)
+                                    },
+                                    label = {
+                                        Text(
+                                            "",
+                                            color = MaterialTheme.colors.onBackground
+                                        )
+                                    },
+                                    keyboardOptions = KeyboardOptions(
+                                        keyboardType = KeyboardType.Number, // or Decimal
+                                        imeAction = ImeAction.Done
+                                    ),
+                                    modifier = Modifier.width(150.dp)
+                                )
+                            }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically)
+                            {
+                                Text("-3db Frequency\nLower", color = Color.Black)
+
+                                OutlinedTextField(
+                                    colors = textFieldColors,
+                                    value = Calculator_FL.value,
+                                    onValueChange = {
+                                        if (it.replace(".", "").replace("E", "")
+                                                .replace("-", "").replace("+", "")
+                                                .isDigitsOnly()
+                                        ) Calculator_FL.value = keep_only_first_dot(it)
+                                    },
+                                    label = {
+                                        Text(
+                                            "Hz",
+                                            color = MaterialTheme.colors.onBackground
+                                        )
+                                    },
+                                    keyboardOptions = KeyboardOptions(
+                                        keyboardType = KeyboardType.Number, // or Decimal
+                                        imeAction = ImeAction.Done
+                                    ),
+                                    modifier = Modifier.width(150.dp)
+                                )
+                            }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically)
+                            {
+                                Text("-3db Frequency\nHigher:", color = Color.Black)
+
+                                OutlinedTextField(
+                                    colors = textFieldColors,
+                                    value = Calculator_FH.value,
+                                    onValueChange = {
+                                        if (it.replace(".", "").replace("E", "")
+                                                .replace("-", "").replace("+", "")
+                                                .isDigitsOnly()
+                                        ) Calculator_FH.value = keep_only_first_dot(it)
+                                    },
+                                    label = {
+                                        Text(
+                                            "Hz",
+                                            color = MaterialTheme.colors.onBackground
+                                        )
+                                    },
+                                    keyboardOptions = KeyboardOptions(
+                                        keyboardType = KeyboardType.Number, // or Decimal
+                                        imeAction = ImeAction.Done
+                                    ),
+                                    modifier = Modifier.width(150.dp)
+                                )
                             }
 
-                            Button(colors = Buttoncolors,
-                                onClick = {
 
-                                    if (bool_to_int(check_string_isnt_any_of_empty_or_not_number_or_zero(Calculator_L.value))
-                                        +bool_to_int(check_string_isnt_any_of_empty_or_not_number_or_zero(Calculator_C.value))
-                                        +bool_to_int(check_string_isnt_any_of_empty_or_not_number_or_zero(Calculator_F.value)) >= 2)
-                                    {
-                                        if (check_string_isnt_any_of_empty_or_not_number_or_zero(Calculator_L.value))
+
+                            Row (modifier = Modifier.fillMaxWidth(),horizontalArrangement = Arrangement.SpaceBetween){
+                                Button(colors = Buttoncolors,
+                                    onClick = {
+                                        Calculator_L.value = ""
+                                        Calculator_C.value = ""
+                                        Calculator_F.value = ""
+                                        Calculator_R.value = ""
+                                        Calculator_Q.value = ""
+                                        Calculator_B.value = ""
+                                        Calculator_FH.value = ""
+                                        Calculator_FL.value = ""
+                                    })
+                                {
+                                    Text("X", color = Color.Black)
+                                }
+
+
+
+                                Button(
+                                    colors = Buttoncolors,
+                                    onClick = {
+
+                                        if (bool_to_int(                                                                  //L C F calculations
+                                                check_string_isnt_any_of_empty_not_number_zero(
+                                                    Calculator_L.value
+                                                )
+                                            )
+                                            + bool_to_int(
+                                                check_string_isnt_any_of_empty_not_number_zero(
+                                                    Calculator_C.value
+                                                )
+                                            )
+                                            + bool_to_int(
+                                                check_string_isnt_any_of_empty_not_number_zero(
+                                                    Calculator_F.value
+                                                )
+                                            ) >= 2
+                                        )
                                         {
-                                            if (check_string_isnt_any_of_empty_or_not_number_or_zero(Calculator_C.value))
-                                            {
-                                                Calculator_F.value = (1/(2*PI*sqrt(Calculator_L.value.toDouble()*Calculator_C.value.toDouble()))).toString()
-                                            }
-                                            else
-                                            {
-                                                Calculator_C.value = (1/(4*PI.pow(2)*Calculator_L.value.toDouble()*Calculator_F.value.toDouble().pow(2))).toString()
+                                            if (check_string_isnt_any_of_empty_not_number_zero(
+                                                    Calculator_L.value
+                                                )
+                                            ) {
+                                                if (check_string_isnt_any_of_empty_not_number_zero(
+                                                        Calculator_C.value
+                                                    )
+                                                ) {
+                                                    Calculator_F.value =
+                                                        (1 / (2 * PI * sqrt(Calculator_L.value.toDouble() * Calculator_C.value.toDouble()))).toString()
+                                                } else {
+                                                    Calculator_C.value =
+                                                        (1 / (4 * PI.pow(2) * Calculator_L.value.toDouble() * Calculator_F.value.toDouble()
+                                                            .pow(2))).toString()
+                                                }
+                                            } else {
+                                                if (check_string_isnt_any_of_empty_not_number_zero(
+                                                        Calculator_C.value
+                                                    )
+                                                ) {
+                                                    if (check_string_isnt_any_of_empty_not_number_zero(
+                                                            Calculator_F.value
+                                                        )
+                                                    ) {
+                                                        Calculator_L.value =
+                                                            (1 / (4 * PI.pow(2) * Calculator_C.value.toDouble() * Calculator_F.value.toDouble()
+                                                                .pow(2))).toString()
+                                                    }
+                                                }
                                             }
                                         }
                                         else
                                         {
-                                            if (check_string_isnt_any_of_empty_or_not_number_or_zero(Calculator_C.value))
+                                            Toast.makeText(
+                                                context,
+                                                "Chose 2 out of 3 values. The last one will be calculated!",
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                        }
+
+                                        if (check_string_isnt_any_of_empty_not_number_zero(                   // Q calculation
+                                                Calculator_L.value
+                                            ) &&
+                                            check_string_isnt_any_of_empty_not_number_zero(
+                                                Calculator_C.value
+                                            ) &&
+                                            check_string_isnt_any_of_empty_not_number_zero(
+                                                Calculator_R.value
+                                            ))
+                                        {
+                                            if (calculator_series.value)
                                             {
-                                                if (check_string_isnt_any_of_empty_or_not_number_or_zero(Calculator_F.value))
-                                                {
-                                                    Calculator_L.value = (1/(4*PI.pow(2)*Calculator_C.value.toDouble()*Calculator_F.value.toDouble().pow(2))).toString()
-                                                }
+                                                Calculator_Q.value = (1/Calculator_R.value.toDouble() * sqrt(Calculator_L.value.toDouble()/Calculator_C.value.toDouble())).toString()
+                                            }
+                                            else
+                                            {
+                                                Calculator_Q.value = (Calculator_R.value.toDouble() * sqrt(Calculator_C.value.toDouble()/Calculator_L.value.toDouble())).toString()
                                             }
                                         }
-                                    }
-                                    else
-                                    {
-                                        Toast.makeText(context, "Chose 2 out of 3 values. The last one will be calculated!", Toast.LENGTH_LONG).show()
-                                    }
-                                })
-                            {
-                                Text("=", color = Color.Black)
+
+
+
+
+                                        if (check_string_isnt_any_of_empty_not_number_zero(                   // B calculation
+                                                Calculator_F.value
+                                            ) &&
+                                            check_string_isnt_any_of_empty_not_number_zero(
+                                                Calculator_Q.value
+                                            ))
+                                        {
+                                            Calculator_B.value = (Calculator_F.value.toDouble()/Calculator_Q.value.toDouble()).toString()
+                                        }
+
+
+                                        if (check_string_isnt_any_of_empty_not_number_zero(                   // FL FH calculation
+                                                Calculator_F.value
+                                            ) &&
+                                            check_string_isnt_any_of_empty_not_number_zero(
+                                                Calculator_B.value
+                                            ))
+                                        {
+                                            Calculator_FL.value = (Calculator_F.value.toDouble() - Calculator_B.value.toDouble()/2).toString()
+                                            Calculator_FH.value = (Calculator_F.value.toDouble() + Calculator_B.value.toDouble()/2).toString()
+                                        }
+
+
+                                        if (check_string_isnt_any_of_empty_not_number_zero(                    // F from FL FH
+                                                Calculator_FL.value
+                                            ) &&
+                                            check_string_isnt_any_of_empty_not_number_zero(
+                                                Calculator_FH.value
+                                            ))
+                                        {
+                                            Calculator_F.value = ((Calculator_FH.value.toDouble() - Calculator_FL.value.toDouble())/2 + Calculator_FL.value.toDouble()).toString()
+                                        }
+
+
+                                        if (check_string_isnt_any_of_empty_not_number_zero(                    // B from FL FH
+                                                Calculator_FL.value
+                                            ) &&
+                                            check_string_isnt_any_of_empty_not_number_zero(
+                                                Calculator_FH.value
+                                            ))
+                                        {
+                                            Calculator_B.value = (Calculator_FH.value.toDouble() - Calculator_FL.value.toDouble()).toString()
+                                        }
+
+                                        if (check_string_isnt_any_of_empty_not_number_zero(                    // B from FL F
+                                                Calculator_FL.value
+                                            ) &&
+                                            check_string_isnt_any_of_empty_not_number_zero(
+                                                Calculator_F.value
+                                            ))
+                                        {
+                                            Calculator_B.value = ((Calculator_F.value.toDouble() - Calculator_FL.value.toDouble()) * 2).toString()
+                                        }
+
+                                        if (check_string_isnt_any_of_empty_not_number_zero(                    // B from FH F
+                                                Calculator_FH.value
+                                            ) &&
+                                            check_string_isnt_any_of_empty_not_number_zero(
+                                                Calculator_F.value
+                                            ))
+                                        {
+                                            Calculator_B.value = ((Calculator_FH.value.toDouble() - Calculator_F.value.toDouble()) * 2).toString()
+                                        }
+
+
+
+                                        if (check_string_isnt_any_of_empty_not_number_zero(                    // Q from F B
+                                                Calculator_F.value
+                                            ) &&
+                                            check_string_isnt_any_of_empty_not_number_zero(
+                                                Calculator_B.value
+                                            ))
+                                        {
+                                            Calculator_Q.value = (Calculator_F.value.toDouble() / Calculator_B.value.toDouble()).toString()
+                                        }
+
+
+                                        if (check_string_isnt_any_of_empty_not_number_zero(                    // R from L C Q
+                                                Calculator_L.value
+                                            ) &&
+                                            check_string_isnt_any_of_empty_not_number_zero(
+                                                Calculator_C.value
+                                            ) &&
+                                            check_string_isnt_any_of_empty_not_number_zero(
+                                                Calculator_Q.value
+                                            ))
+                                        {
+                                            if (calculator_series.value)
+                                            {
+                                                Calculator_R.value = (sqrt(Calculator_L.value.toDouble() / Calculator_C.value.toDouble()) / Calculator_Q.value.toDouble()).toString()
+                                            }
+                                            else
+                                            {
+                                                Calculator_R.value = (Calculator_Q.value.toDouble() / sqrt(Calculator_C.value.toDouble() / Calculator_L.value.toDouble())).toString()
+                                            }
+                                        }
+
+
+                                        if (check_string_isnt_any_of_empty_not_number_zero(                    // L from R C Q
+                                                Calculator_R.value
+                                            ) &&
+                                            check_string_isnt_any_of_empty_not_number_zero(
+                                                Calculator_C.value
+                                            ) &&
+                                            check_string_isnt_any_of_empty_not_number_zero(
+                                                Calculator_Q.value
+                                            ))
+                                        {
+                                            if (calculator_series.value)
+                                            {
+                                                Calculator_L.value = (Calculator_C.value.toDouble() * (Calculator_R.value.toDouble() * Calculator_Q.value.toDouble()).pow(2) ).toString()
+                                            }
+                                            else
+                                            {
+                                                Calculator_L.value = (Calculator_C.value.toDouble() / (Calculator_Q.value.toDouble() / Calculator_R.value.toDouble()).pow(2)).toString()
+                                            }
+                                        }
+
+
+
+
+                                        if (check_string_isnt_any_of_empty_not_number_zero(                    // C from R L Q
+                                                Calculator_R.value
+                                            ) &&
+                                            check_string_isnt_any_of_empty_not_number_zero(
+                                                Calculator_L.value
+                                            ) &&
+                                            check_string_isnt_any_of_empty_not_number_zero(
+                                                Calculator_Q.value
+                                            ))
+                                        {
+                                            if (calculator_series.value)
+                                            {
+                                                Calculator_C.value = (Calculator_L.value.toDouble() / (Calculator_R.value.toDouble() * Calculator_Q.value.toDouble()).pow(2) ).toString()
+                                            }
+                                            else
+                                            {
+                                                Calculator_C.value = (Calculator_L.value.toDouble() * (Calculator_Q.value.toDouble() / Calculator_R.value.toDouble()).pow(2)).toString()
+                                            }
+                                        }
+                                    })
+                                {
+                                    Text("=", color = Color.Black)
+                                }
                             }
+
+
+
+
+
+                            LaTeXView(latex = "\\L = \\\\frac{1}{C \\\\cdot F_r^2} \\\\quad  \\C = \\\\frac{1}{L \\\\cdot F_r^2} \\\\quad \\F_r = \\\\frac{1}{2 \\\\pi \\\\sqrt{L C}}")
+                            LaTeXView(latex = "\\B = \\\\frac{F_r}{Q} \\\\quad F_{1,2} \\\\approx F_r \\\\pm \\\\frac{B}{2}")
+
+                            LaTeXView(latex = "Series RLC: \\Q = \\\\frac{1}{R} \\\\sqrt{\\\\frac{L}{C}} ")
+                            LaTeXView(latex = "Parallel RLC: \\Q = \\R \\\\sqrt{\\\\frac{C}{L}} ")
+
+
+                            Spacer(modifier = Modifier.height(50.dp))
                         }
                     }
 
                     if (current_window_shown.value == "help")
                     {
-                        Column {
-                            Spacer(Modifier.height(50.dp))
-                            Text("Here are some useful tips:",color = Color.Black)
-                            Text("-To delete a component drag it to the left side of the screen.",color = Color.Black)
-                            Text("-You can zoom in to the graph for more precise reading.",color = Color.Black)
-                            Text("-The calculator screen needs 2 values. The last one will be calculated",color = Color.Black)
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 24.dp)
+                        ) {
+                            Text(
+                                text = "Here are some useful tips:",
+                                color = Color.Black,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 20.sp
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            TipItem(" To delete a component, drag it to the left side of the screen.")
+                            TipItem(" You can zoom in on the graph for more precise reading.")
+                            TipItem(" The calculator can calculate missing values based on the given ones. For minimal given values refer to the equations below the calculator.")
                         }
                     }
+
+
+
+
+
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .height(60.dp)
+                            .padding(bottom = 50.dp),
+                        verticalAlignment = Alignment.Bottom,
+                        horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.End)
+                    )
+                    {
+                        if (current_window_shown.value == "graph") {
+                            Button(
+                                colors = Buttoncolors,
+                                onClick = { show_equation.value = !show_equation.value })
+                            {
+                                Text("EQUATION", color = Color.Black)
+                            }
+
+                            Button(
+                                colors = Buttoncolors,
+                                onClick =
+                                    {
+                                        //check if 0 is in phase graph range
+                                        val is_zero_in_range =
+                                            sign(phase_graph_data.value[0].y) == -1 * sign(
+                                                phase_graph_data.value[graph_lenght - 1].y
+                                            )
+                                        if (is_zero_in_range) {
+                                            var result = find_phase(
+                                                total_equation.value,
+                                                graph_from.value,
+                                                graph_to.value,
+                                                precision_steps,
+                                                0.0
+                                            )
+                                            fr.value = result.first
+                                            fr_precision_error.value = result.second
+
+                                            //cant evaluate exactly at fr because there are issues with division with 0
+                                            abs_at_fr.value = (amp_phase_from_complex(
+                                                calculate_value(
+                                                    total_equation.value,
+                                                    fr.value + fr_precision_error.value
+                                                )
+                                            ).first +
+                                                    amp_phase_from_complex(
+                                                        calculate_value(
+                                                            total_equation.value,
+                                                            fr.value - fr_precision_error.value
+                                                        )
+                                                    ).first) / 2
+
+
+                                            result = find_phase(
+                                                total_equation.value,
+                                                graph_from.value,
+                                                graph_to.value,
+                                                precision_steps,
+                                                45.0
+                                            )
+                                            val plus_45_phase = result.first
+                                            val plus_45_phase_error = result.second
+
+
+                                            result = find_phase(
+                                                total_equation.value,
+                                                graph_from.value,
+                                                graph_to.value,
+                                                precision_steps,
+                                                -45.0
+                                            )
+                                            val minus_45_phase = result.first
+                                            val minus_45_phase_error = result.second
+
+                                            if (plus_45_phase > minus_45_phase) {
+                                                fmd.value = minus_45_phase
+                                                fmh.value = plus_45_phase
+                                            } else {
+                                                fmd.value = plus_45_phase
+                                                fmh.value = minus_45_phase
+                                            }
+
+                                            B.value = fmh.value - fmd.value
+                                            Q.value = fr.value / B.value
+                                        } else {
+                                            Toast.makeText(
+                                                context,
+                                                "Cannot find fr",
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                        }
+
+                                        show_stats.value = !show_stats.value
+                                    })
+                            {
+                                Text("STATS", color = Color.Black)
+                            }
+                        }
+
+                        if (current_window_shown.value == "circuit" || current_window_shown.value == "help") {
+                            Button(
+                                colors = Buttoncolors,
+                                onClick = {
+                                    if (current_window_shown.value == "circuit") {
+                                        current_window_shown.value = "help"
+                                    } else {
+                                        current_window_shown.value = "circuit"
+                                    }
+                                }) {
+                                Text("HELP", color = Color.Black)
+                            }
+                        }
+
+
+                        if (current_window_shown.value == "circuit" || current_window_shown.value == "calculator") {
+                            Button(
+                                colors = Buttoncolors,
+                                onClick = {
+                                    if (current_window_shown.value == "circuit") {
+                                        Log.d("change", "to_calculator")
+                                        current_window_shown.value = "calculator"
+                                    } else {
+                                        Log.d("change", "to_circuit")
+                                        current_window_shown.value = "circuit"
+                                    }
+                                }) {
+                                Text("CALCULATOR", color = Color.Black)
+                            }
+                        }
+
+
+                        if (current_window_shown.value == "circuit" || current_window_shown.value == "graph") {
+                            Button(
+                                colors = Buttoncolors,
+                                onClick =
+                                    {
+                                        if (current_window_shown.value != "graph") {
+                                            show_stats.value = false
+                                            graph_from.value = graph_absolute_start_at
+                                            graph_to.value = graph_absolute_end_at
+
+
+                                            var solved_components =
+                                                components.mapValues { it.value.deepCopy() }
+                                                    .toMutableMap()
+
+                                            if (solved_components.size != 2) {
+                                                simplyfy(solved_components)
+                                                var the_component: String = ""
+                                                solved_components.entries.forEach { (key, _) ->
+                                                    the_component = key
+                                                }
+
+                                                if (total_equation.value != "0" && solved_components.size == 1
+                                                    && (solved_components[the_component]!!.input.contains(
+                                                        "M"
+                                                    ) || solved_components[the_component]!!.output.contains(
+                                                        "M"
+                                                    ))
+                                                    && (solved_components[the_component]!!.input.contains(
+                                                        "P"
+                                                    ) || solved_components[the_component]!!.output.contains(
+                                                        "P"
+                                                    ))
+                                                ) {
+                                                    solved_components.entries.forEach { (key, _) ->
+                                                        total_equation.value =
+                                                            solved_components[key]!!.equation
+                                                    } // there should be only one component
+
+                                                    var data = getvalues_for_initial_graph(
+                                                        total_equation.value,
+                                                        graph_from.value,
+                                                        graph_to.value
+                                                    )
+                                                    abs_graph_data.value = data.first
+                                                    phase_graph_data.value = data.second
+                                                    //Log.d("autorange_posible","${phase_graph_data.value[0].y != phase_graph_data.value[graph_lenght-1].y}")
+                                                    if (phase_graph_data.value[0].y != phase_graph_data.value[graph_lenght - 1].y)  // cant estimate graph for just L C
+                                                    {
+                                                        val newrange = get_range_automaticaly(
+                                                            phase_graph_data.value,
+                                                            total_equation.value
+                                                        )
+                                                        Log.d("autorange:", "${newrange}")
+                                                        if (newrange.first != (-1).toFloat()) {
+                                                            if (newrange.first == newrange.second) {
+                                                                graph_from.value =
+                                                                    (newrange.first * 0.9).toDouble()
+                                                                graph_to.value =
+                                                                    (newrange.second * 1.1).toDouble()
+                                                            } else {
+                                                                graph_from.value =
+                                                                    newrange.first.toDouble()
+                                                                graph_to.value =
+                                                                    newrange.second.toDouble()
+                                                            }
+                                                        }
+
+                                                        data = getvalues_for_initial_graph(
+                                                            total_equation.value,
+                                                            graph_from.value,
+                                                            graph_to.value
+                                                        )
+                                                        abs_graph_data.value = data.first
+                                                        phase_graph_data.value = data.second
+                                                    }
+
+
+                                                    current_window_shown.value = "graph"
+                                                } else {
+                                                    //Log.d("test","${total_equation.value}")
+                                                    //Log.d("test","${solved_components.size}")
+                                                    if (solved_components.isEmpty()) {
+                                                        Toast.makeText(
+                                                            context,
+                                                            "The components need to be connected to RED and BLUE!",
+                                                            Toast.LENGTH_LONG
+                                                        ).show()
+                                                    } else if (solved_components.size == 1) {
+                                                        Toast.makeText(
+                                                            context,
+                                                            "An Error occurred :(",
+                                                            Toast.LENGTH_LONG
+                                                        ).show()
+                                                    } else {
+                                                        Toast.makeText(
+                                                            context,
+                                                            "Cant yet solve this circuit :(",
+                                                            Toast.LENGTH_LONG
+                                                        ).show()
+                                                    }
+                                                }
+                                            } else {
+                                                if (current_window_shown.value == "circuit") {
+                                                    Toast.makeText(
+                                                        context,
+                                                        "Add or connect components to BLUE and RED",
+                                                        Toast.LENGTH_LONG
+                                                    ).show()
+                                                }
+                                            }
+                                        } else {
+                                            current_window_shown.value = "circuit"
+                                        }
+                                    })
+                            {
+                                Text("GRAPH", color = Color.Black)
+                            }
+                        }
+                    }
+
                 }
             }
+        }
+    }
+
+    @Composable
+    fun TipItem(text: String) {
+        Row(modifier = Modifier.padding(vertical = 4.dp)) {
+            Text("• ", color = Color.Black, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Text(text, color = Color.Black, fontSize = 16.sp)
         }
     }
 
@@ -1690,6 +2358,31 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    @SuppressLint("SetJavaScriptEnabled")
+    @Composable
+    fun LaTeXView(latex: String)
+    {
+
+        var webView: WebView? by remember { mutableStateOf(null) }
+
+        val state = rememberWebViewState("file:///android_asset/latex_render.html")
+
+        if (state.loadingState is LoadingState.Finished) {
+            webView?.loadUrl("javascript:addBody('${latex}')")
+        }
+        com.google.accompanist.web.WebView(
+            state = state,
+            modifier = Modifier,
+            onCreated = {
+                it.settings.javaScriptEnabled = true
+                webView = it
+                it.setLayerType(WebView.LAYER_TYPE_SOFTWARE, null)
+                it.setBackgroundColor(0)
+            }
+        )
+    }
+
 }
 
 fun phasefromcomplex(complex: Complex): Double {
@@ -1778,7 +2471,7 @@ val operators = mapOf(
 )
 
 
-fun check_string_isnt_any_of_empty_or_not_number_or_zero(string: String): Boolean {
+fun check_string_isnt_any_of_empty_not_number_zero(string: String): Boolean {
     if (string.isEmpty())
     {
 
