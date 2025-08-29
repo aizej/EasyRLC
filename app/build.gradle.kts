@@ -12,8 +12,8 @@ android {
         applicationId = "com.aizej.easyrlc"
         minSdk = 28
         targetSdk = 35
-        versionCode = 14
-        versionName = "1.14"
+        versionCode = 16
+        versionName = "1.16"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

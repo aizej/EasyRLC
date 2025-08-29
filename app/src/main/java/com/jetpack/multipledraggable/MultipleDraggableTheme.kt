@@ -30,7 +30,7 @@ private val Purple700 = Color(0xF892B3FF)
 private val DarkColorPalette = darkColors(
     primary         = Purple500,
     primaryVariant  = Purple700,
-    secondary       = Purple700,          // <<< swap out the green
+    secondary       = Color.White,          // <<< swap out the green
     background      = Color.Black,
     surface         = Color(0xFF121212),  // subtle dark gray
     onPrimary       = Color.Black,
@@ -42,13 +42,13 @@ private val DarkColorPalette = darkColors(
 private val LightColorPalette = lightColors(
     primary         = Purple500,
     primaryVariant  = Purple700,
-    secondary       = Purple700,          // keep everything in the same family
+    secondary       = Color.White,          // keep everything in the same family
     background      = Color.White,
     surface         = Color(0xFFF5F5F5),  // subtle light gray
     onPrimary       = Color.White,
     onSecondary     = Color.White,
     onBackground    = Color.Black,
-    onSurface       = Color.Black
+    onSurface       = Color.Black,
 )
 
 @Composable

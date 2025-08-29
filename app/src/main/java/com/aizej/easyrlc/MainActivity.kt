@@ -37,6 +37,7 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Surface
 import androidx.compose.material.Switch
+import androidx.compose.material.SwitchDefaults
 import androidx.compose.material.Text
 import androidx.compose.material.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -145,7 +146,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             MultipleDraggableTheme (){
-                Surface(color = MaterialTheme.colors.background) {
+                Surface(color = MaterialTheme.colors.secondary) {
                     val textFieldColors = TextFieldDefaults.outlinedTextFieldColors(
                         textColor              = MaterialTheme.colors.onSurface,
                         backgroundColor        = MaterialTheme.colors.surface,
@@ -166,13 +167,13 @@ class MainActivity : ComponentActivity() {
 
                     // Use remember to keep components state across recompositions
                     val components = remember { mutableStateMapOf<String, Component>() }
-                    var current_window_shown = remember { mutableStateOf("circuit") }
+                    val current_window_shown = remember { mutableStateOf("circuit") }
                     val show_stats = remember { mutableStateOf(false) }
-                    var total_equation = remember {mutableStateOf("")}
-                    var abs_graph_data = remember { mutableStateOf(listOf<Point>()) }
-                    var phase_graph_data = remember { mutableStateOf(listOf<Point>()) }
-                    var graph_from = remember { mutableStateOf(graph_absolute_start_at) }
-                    var graph_to = remember { mutableStateOf(graph_absolute_end_at) }
+                    val total_equation = remember {mutableStateOf("")}
+                    val abs_graph_data = remember { mutableStateOf(listOf<Point>()) }
+                    val phase_graph_data = remember { mutableStateOf(listOf<Point>()) }
+                    val graph_from = remember { mutableStateOf(graph_absolute_start_at) }
+                    val graph_to = remember { mutableStateOf(graph_absolute_end_at) }
                     val Calculator_L = remember { mutableStateOf("") }
                     val Calculator_C = remember { mutableStateOf("") }
                     val Calculator_F = remember { mutableStateOf("") }
@@ -296,8 +297,8 @@ class MainActivity : ComponentActivity() {
 
                             Row() {
                                 var frequency_textfield_text by remember { mutableStateOf("") }
-                                var frequency_from = remember { mutableStateOf("") }
-                                var frequency_to = remember { mutableStateOf("") }
+                                val frequency_from = remember { mutableStateOf("") }
+                                val frequency_to = remember { mutableStateOf("") }
                                 val result_from_eqact_calc =
                                     remember { mutableStateOf(Complex(0.0, 0.0)) }
                                 val Z_amount = remember { mutableStateOf(0.0) }
@@ -813,11 +814,12 @@ class MainActivity : ComponentActivity() {
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically)
                             {
-                                Text(if (calculator_series.value) "Series RLC" else "Parallel RLC")
+                                Text(if (calculator_series.value) "Series RLC" else "Parallel RLC", color = Color.Black)
 
                                 Switch(
                                     checked = calculator_series.value,
-                                    onCheckedChange = { calculator_series.value = it }
+                                    onCheckedChange = { calculator_series.value = it },
+                                    colors = SwitchDefaults.colors()
                                 )
                             }
                             Row(
@@ -1398,7 +1400,7 @@ class MainActivity : ComponentActivity() {
                                             graph_to.value = graph_absolute_end_at
 
 
-                                            var solved_components =
+                                            val solved_components =
                                                 components.mapValues { it.value.deepCopy() }
                                                     .toMutableMap()
 
@@ -1700,24 +1702,24 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun ComponentComposable(components: MutableMap<String, Component>, componenta_name: String)
     {
-        var x1 = components[componenta_name]?.frontPosition?.value?.x!!+point_size
-        var y1 = components[componenta_name]?.frontPosition?.value?.y!!+point_size
-        var x2 = components[componenta_name]?.backPosition?.value?.x!!+point_size
-        var y2 = components[componenta_name]?.backPosition?.value?.y!!+point_size
+        val x1 = components[componenta_name]?.frontPosition?.value?.x!!+point_size
+        val y1 = components[componenta_name]?.frontPosition?.value?.y!!+point_size
+        val x2 = components[componenta_name]?.backPosition?.value?.x!!+point_size
+        val y2 = components[componenta_name]?.backPosition?.value?.y!!+point_size
 
 
         val length = sqrt( (x2 - x1)*(x2 - x1)+(y2 - y1)*(y2 - y1))
 
         val angle = atan2(y2 - y1, x2 - x1) * (180f / PI).toFloat()
-        var size_width = (length/2 - point_size/2)*0.72 + 10
-        var size_height = (length/2 - point_size/2)*0.72 + 10
+        val size_width = (length/2 - point_size/2)*0.72 + 10
+        val size_height = (length/2 - point_size/2)*0.72 + 10
 
-        var centerX = (x1 + x2) / 2 - size_width*1.35 + 5
-        var centerY = (y1 + y2) / 2 - size_height*1.35 + 5
+        val centerX = (x1 + x2) / 2 - size_width*1.35 + 5
+        val centerY = (y1 + y2) / 2 - size_height*1.35 + 5
 
 
 
-        var image_name  = components[componenta_name]!!.image
+        val image_name  = components[componenta_name]!!.image
 
 
         Box(
@@ -1752,11 +1754,11 @@ class MainActivity : ComponentActivity() {
             components.entries.forEach { (key2, _) ->
                 if (key != key2)
                 {
-                    var key1_front = components[key]?.frontPosition?.value!!
-                    var key1_back = components[key]?.backPosition?.value!!
+                    val key1_front = components[key]?.frontPosition?.value!!
+                    val key1_back = components[key]?.backPosition?.value!!
 
-                    var key2_front = components[key2]?.frontPosition?.value!!
-                    var key2_back = components[key2]?.backPosition?.value!!
+                    val key2_front = components[key2]?.frontPosition?.value!!
+                    val key2_back = components[key2]?.backPosition?.value!!
 
 
                     if (distance(key1_front,key2_front) < point_size*2)
@@ -2157,8 +2159,8 @@ class MainActivity : ComponentActivity() {
 
     fun getvalues_for_initial_graph(equation: String, from: Double, to: Double): Pair<MutableList<Point>, MutableList<Point>>
     {
-        var abs_data = mutableListOf<Point>()
-        var phase_data = mutableListOf<Point>()
+        val abs_data = mutableListOf<Point>()
+        val phase_data = mutableListOf<Point>()
 
 
         for (i in 0..graph_lenght-1)
@@ -2639,7 +2641,7 @@ fun getScreenHeight(): Int {
 
 
 fun String_number_to_prefix(number: String): String {
-    var number = number.toDouble()
+    val number = number.toDouble()
     if (number < 0.000000001)
         {
             return (number*1000000000000).toString() + "n"
