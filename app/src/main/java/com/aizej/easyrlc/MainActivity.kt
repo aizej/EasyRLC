@@ -1222,11 +1222,13 @@ class MainActivity : ComponentActivity() {
 
 
 
-                            LaTeXView(latex = "\\L = \\\\frac{1}{C \\\\cdot F_r^2} \\\\quad  \\C = \\\\frac{1}{L \\\\cdot F_r^2} \\\\quad \\F_r = \\\\frac{1}{2 \\\\pi \\\\sqrt{L C}}")
-                            LaTeXView(latex = "\\B = \\\\frac{F_r}{Q} \\\\quad F_{1,2} \\\\approx F_r \\\\pm \\\\frac{B}{2}")
+                            LaTeXView(latex = "\\L = \\\\frac{1}{C \\\\cdot F_r^2} \\\\quad  \\C = \\\\frac{1}{L \\\\cdot F_r^2}")
+                            LaTeXView(latex = "\\F_r = \\\\frac{1}{2 \\\\pi \\\\sqrt{L C}}")
 
-                            LaTeXView(latex = "Series RLC: \\Q = \\\\frac{1}{R} \\\\sqrt{\\\\frac{L}{C}} ")
-                            LaTeXView(latex = "Parallel RLC: \\Q = \\R \\\\sqrt{\\\\frac{C}{L}} ")
+                            LaTeXView(latex = "\\B = \\\\frac{F_r}{Q} \\\\quad \\\\quad F_{1,2} \\\\approx F_r \\\\pm \\\\frac{B}{2}")
+
+                            LaTeXView(latex = "\\\\text{Series RLC:   } \\Q = \\\\frac{1}{R} \\\\sqrt{\\\\frac{L}{C}}")
+                            LaTeXView(latex = "\\\\text{Parallel RLC:   } \\Q = R \\\\sqrt{\\\\frac{C}{L}} ")
 
 
                             Spacer(modifier = Modifier.height(50.dp))
